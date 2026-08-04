@@ -195,6 +195,17 @@ select.fi option{background:#1a1a26;}
 .spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.08);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto;}
 @keyframes sp{to{transform:rotate(360deg)}}
 
+/* ── DONA ── */
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-svg{transform-origin:center;flex-shrink:0}
+.legend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:0}
+.lrow{display:flex;align-items:center;gap:8px;font-size:12px;opacity:0;transform:translateX(-6px)}
+.lrow.in{animation:lrowIn .45s cubic-bezier(.3,1,.5,1) both}
+@keyframes lrowIn{to{opacity:1;transform:translateX(0)}}
+.ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.lname{flex:1;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lval{font-family:'DM Mono',monospace;font-weight:600;font-size:11px;flex-shrink:0}
+
 /* ── SPLASH ── */
 #splash{
   position:fixed;inset:0;z-index:9999;
@@ -365,6 +376,63 @@ const parseI=v=>String(v).replace(/\./g,"");
 const mk=()=>`${curYear}-${String(curMonth+1).padStart(2,"0")}`;
 const getC=id=>cats.find(c=>c.id===id)||{label:id,icon:"📦",color:"#636379"};
 
+// ── HÁPTICA ───────────────────────────────────────────────────────────────────
+function haptic(tipo){
+  if(!navigator.vibrate)return;
+  const p={light:8,medium:18,heavy:30,double:[12,50,12]}[tipo]||8;
+  try{navigator.vibrate(p);}catch{}
+}
+
+// ── CONTADOR ANIMADO ──────────────────────────────────────────────────────────
+const easeOutC=p=>1-Math.pow(1-p,3);
+function countTo(el,to,dur=750){
+  if(!el)return;
+  const from=0,t0=performance.now();
+  el.__anim=(el.__anim||0)+1;
+  const mine=el.__anim;
+  (function step(t){
+    if(el.__anim!==mine)return;
+    const p=Math.min((t-t0)/dur,1);
+    el.textContent=fmt(Math.round(from+(to-from)*easeOutC(p)));
+    if(p<1)requestAnimationFrame(step);
+  })(performance.now());
+}
+
+// ── DONA (opción B: crecer con rebote) ────────────────────────────────────────
+const NS_SVG="http://www.w3.org/2000/svg";
+function buildDonut(datos,total){
+  const CX=65,CY=65,R=48,SW=18,CIRC=2*Math.PI*R;
+  let svg=`<svg width="130" height="130" viewBox="0 0 130 130" class="donut-svg" id="donut-svg">`;
+  svg+=`<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="${SW}"/>`;
+  let acc=0;
+  datos.forEach(d=>{
+    const len=CIRC*(d.v/total);
+    svg+=`<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${d.c}" stroke-width="${SW}"
+      stroke-linecap="round" stroke-dasharray="${Math.max(len-3,2).toFixed(1)} ${CIRC.toFixed(1)}"
+      transform="rotate(${(-90+(acc/CIRC)*360).toFixed(2)} ${CX} ${CY})"/>`;
+    acc+=len;
+  });
+  svg+=`</svg>`;
+  return svg;
+}
+function animateDonut(){
+  const svg=document.getElementById("donut-svg");
+  if(!svg)return;
+  svg.style.transformOrigin="65px 65px";
+  svg.style.transition="none";
+  svg.style.transform="scale(.4) rotate(-45deg)";
+  svg.style.opacity="0";
+  requestAnimationFrame(()=>{
+    svg.style.transition="transform .75s cubic-bezier(.34,1.5,.5,1), opacity .4s ease";
+    svg.style.transform="scale(1) rotate(0deg)";
+    svg.style.opacity="1";
+  });
+  const lg=document.getElementById("donut-legend");
+  if(lg)requestAnimationFrame(()=>lg.querySelectorAll(".lrow").forEach(r=>r.classList.add("in")));
+  const tot=document.getElementById("donut-total");
+  if(tot)countTo(tot,Number(tot.dataset.v||0),800);
+}
+
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 async function sbGet(t,q=""){const r=await fetch(`${SB_URL}/rest/v1/${t}${q}`,{headers:{...H,"Accept":"application/json"}});if(!r.ok){const e=await r.json();throw new Error(e.message||`Error ${r.status}`);}return r.json();}
 async function sbUpsert(t,d){const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:"POST",headers:{...H,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(Array.isArray(d)?d:[d])});if(!r.ok){const e=await r.json();throw new Error(e.message||`Error guardando`);}}
@@ -417,11 +485,11 @@ function renderAll(){
   const tb=Object.values(buds).reduce((a,b)=>a+Number(b||0),0);
   const ts=exps.reduce((a,e)=>a+Number(e.amount||0),0);
   const tl=tb-ts,pct=tb>0?(ts/tb)*100:0;
-  document.getElementById("s-bud").textContent=fmt(tb);
-  document.getElementById("s-spt").textContent=fmt(ts);
+  countTo(document.getElementById("s-bud"),tb);
+  countTo(document.getElementById("s-spt"),ts);
   document.getElementById("s-spt").style.color=pct>100?"var(--red)":"var(--amber)";
   document.getElementById("s-pct").textContent=`${Math.round(pct)}%`;
-  document.getElementById("s-lft").textContent=fmt(Math.max(tl,0));
+  countTo(document.getElementById("s-lft"),Math.max(tl,0));
   document.getElementById("s-lft").style.color=tl<0?"var(--red)":"var(--green)";
   document.getElementById("s-lft-sub").textContent=tl<0?"⚠ Excedido":"Libre";
   const bar=document.getElementById("g-bar");
@@ -435,7 +503,40 @@ function renderAll(){
 
 function renderDash(){
   const s={};exps.forEach(e=>{s[e.category]=(s[e.category]||0)+Number(e.amount);});
-  let h='<div style="font-size:13px;color:var(--text2);margin-bottom:16px;font-weight:500">Toca una categoría para editar su presupuesto</div><div style="display:grid;gap:12px">';
+  let h="";
+
+  // ── DONA DE DISTRIBUCIÓN ──
+  const datos=cats.map(c=>({n:c.label,v:s[c.id]||0,c:c.color})).filter(d=>d.v>0).sort((a,b)=>b.v-a.v);
+  const totalGasto=datos.reduce((a,d)=>a+d.v,0);
+  if(totalGasto>0){
+    const top=datos.slice(0,5);
+    const resto=datos.slice(5);
+    if(resto.length){top.push({n:`Otros (${resto.length})`,v:resto.reduce((a,d)=>a+d.v,0),c:"#636379"});}
+    h+=`<div class="card" style="padding:18px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-weight:700;font-size:15px">Distribución del gasto</div>
+        <div style="font-size:11px;color:var(--text3)">${MONTHS[curMonth]}</div>
+      </div>
+      <div class="donut-wrap">
+        <div style="position:relative;flex-shrink:0">
+          ${buildDonut(top,totalGasto)}
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+            <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:700">Total</div>
+            <div id="donut-total" data-v="${totalGasto}" style="font-family:'DM Mono',monospace;font-weight:700;font-size:15px">$0</div>
+          </div>
+        </div>
+        <div class="legend" id="donut-legend">
+          ${top.map((d,i)=>`<div class="lrow" style="animation-delay:${350+i*70}ms">
+            <span class="ldot" style="background:${d.c}"></span>
+            <span class="lname">${d.n}</span>
+            <span class="lval" style="color:${d.c}">${Math.round(d.v/totalGasto*100)}%</span>
+          </div>`).join("")}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  h+='<div style="font-size:13px;color:var(--text2);margin-bottom:16px;font-weight:500">Toca una categoría para editar su presupuesto</div><div style="display:grid;gap:12px">';
   cats.forEach(cat=>{
     const bud=Number(buds[cat.id]||0),sp=s[cat.id]||0,pct=bud>0?(sp/bud)*100:0,left=bud-sp;
     const bc=pct>100?"var(--red)":pct>80?"var(--amber)":cat.color;
@@ -466,6 +567,7 @@ function renderDash(){
   const el=document.getElementById("tab-dashboard");
   el.innerHTML=h+"</div>";
   el.className="fade-in";
+  animateDonut();
 }
 
 function renderExps(){
@@ -530,6 +632,7 @@ function renderCats(){
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
 function setTab(tab,btn){
+  haptic("light");
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.remove("on"));
   btn.classList.add("on");
   ["dashboard","expenses","categories"].forEach(t=>{
@@ -539,9 +642,9 @@ function setTab(tab,btn){
   });
   renderAll();
 }
-function setFilt(cat){filtCat=cat;renderExps();}
-async function prevMonth(){filtCat="all";curMonth===0?(curMonth=11,curYear--):curMonth--;await loadAndRender();}
-async function nextMonth(){filtCat="all";curMonth===11?(curMonth=0,curYear++):curMonth++;await loadAndRender();}
+function setFilt(cat){haptic("light");filtCat=cat;renderExps();}
+async function prevMonth(){haptic("light");filtCat="all";curMonth===0?(curMonth=11,curYear--):curMonth--;await loadAndRender();}
+async function nextMonth(){haptic("light");filtCat="all";curMonth===11?(curMonth=0,curYear++):curMonth++;await loadAndRender();}
 async function loadAndRender(){
   show("s-loading");
   try{await loadAll();show("app");renderAll();}catch(e){showErr(e.message);}
@@ -549,6 +652,7 @@ async function loadAndRender(){
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 function openMod(h){
+  haptic("light");
   document.getElementById("modal-body").innerHTML=h;
   const m=document.getElementById("modal");
   m.style.display="flex";
@@ -583,11 +687,11 @@ function openBudMod(id){
 }
 async function saveBudM(){
   const n=Number(parseI(document.getElementById("b-amt").value));if(!n||n<=0)return;
-  buds[editBudId]=n;closeModForce();renderAll();showSt("saving");
+  haptic("medium");buds[editBudId]=n;closeModForce();renderAll();showSt("saving");
   try{await saveBud(editBudId,n);showSt("saved");}catch(e){showSt("error");}
 }
 async function removeBud(){
-  delete buds[editBudId];closeModForce();renderAll();showSt("saving");
+  haptic("double");delete buds[editBudId];closeModForce();renderAll();showSt("saving");
   try{await saveBud(editBudId,0);showSt("saved");}catch{showSt("error");}
 }
 
@@ -631,12 +735,13 @@ async function saveExpM(){
   const n=Number(parseI(document.getElementById("e-amt").value));if(!n)return;
   const exp={id:editExpId||Date.now(),category:document.getElementById("e-cat").value,amount:n,
     description:document.getElementById("e-desc").value,date:document.getElementById("e-date").value};
+  haptic("medium");
   if(editExpId)exps=exps.map(e=>e.id==editExpId?exp:e);else exps=[exp,...exps];
   closeModForce();renderAll();showSt("saving");
   try{await saveExp(exp);showSt("saved");}catch(e){showSt("error");}
 }
 async function delExpM(id){
-  exps=exps.filter(e=>e.id!=id);closeModForce();renderAll();showSt("saving");
+  haptic("double");exps=exps.filter(e=>e.id!=id);closeModForce();renderAll();showSt("saving");
   try{await delExp(id);showSt("saved");}catch{showSt("error");}
 }
 
@@ -670,19 +775,20 @@ function openCatMod(label,icon,color){
       <button class="bp" style="flex:1" onclick="saveCatM()">${editCatId?"Guardar":"Crear"}</button>
     </div>`);
 }
-function selIco(em,btn){window._ci=em;document.getElementById("c-prev-ico").textContent=em;document.getElementById("c-prev-icon").textContent=em;document.querySelectorAll(".ej").forEach(b=>b.classList.remove("on"));btn.classList.add("on");}
-function selCol(c,el){window._cc=c;const pi=document.getElementById("c-prev-icon");pi.style.background=c+"20";pi.style.border=`1px solid ${c}35`;document.getElementById("c-prev-lbl").style.color=c;document.querySelectorAll(".cd").forEach(d=>d.classList.remove("on"));el.classList.add("on");}
+function selIco(em,btn){haptic("light");window._ci=em;document.getElementById("c-prev-ico").textContent=em;document.getElementById("c-prev-icon").textContent=em;document.querySelectorAll(".ej").forEach(b=>b.classList.remove("on"));btn.classList.add("on");}
+function selCol(c,el){haptic("light");window._cc=c;const pi=document.getElementById("c-prev-icon");pi.style.background=c+"20";pi.style.border=`1px solid ${c}35`;document.getElementById("c-prev-lbl").style.color=c;document.querySelectorAll(".cd").forEach(d=>d.classList.remove("on"));el.classList.add("on");}
 async function saveCatM(){
   const label=document.getElementById("c-name").value.trim();if(!label)return;
   const id=editCatId||`c${Date.now()}`;
   const prev=cats.find(c=>c.id===editCatId);
   const cat={id,label,icon:window._ci,color:window._cc,orden:prev?prev.orden:cats.length};
+  haptic("medium");
   if(editCatId)cats=cats.map(c=>c.id===editCatId?cat:c);else cats=[...cats,cat];
   closeModForce();renderAll();showSt("saving");
   try{await saveCat(cat);showSt("saved");}catch(e){showSt("error");}
 }
 async function delCatM(){
-  cats=cats.filter(c=>c.id!==editCatId);closeModForce();renderAll();showSt("saving");
+  haptic("double");cats=cats.filter(c=>c.id!==editCatId);closeModForce();renderAll();showSt("saving");
   try{await delCat(editCatId);showSt("saved");}catch{showSt("error");}
 }
 
