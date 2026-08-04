@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Control de Gastos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:#0d1117;color:#e2e8f0;min-height:100vh;}
+  ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:#0d1117;} ::-webkit-scrollbar-thumb{background:#2d3748;border-radius:2px;}
+  .card{background:#161b27;border:1px solid #1e2a3a;border-radius:16px;}
+  .rh:hover{background:#1a2236!important;cursor:pointer;}
+  .bp{background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-family:inherit;font-weight:600;cursor:pointer;font-size:14px;transition:background .2s;}
+  .bp:hover{background:#2563eb;}
+  .bg{background:transparent;color:#94a3b8;border:1px solid #2d3748;border-radius:10px;padding:10px 18px;font-family:inherit;font-weight:500;cursor:pointer;font-size:14px;transition:all .2s;}
+  .bg:hover{border-color:#4a5568;color:#e2e8f0;}
+  .pb{height:6px;background:#1e2535;border-radius:3px;overflow:hidden;}
+  .pf{height:100%;border-radius:3px;transition:width .5s ease;}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px);padding:16px;}
+  .modal{background:#161b27;border:1px solid #1e2a3a;border-radius:20px;padding:26px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;}
+  .fl{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:block;}
+  .fi{width:100%;background:#0d1117;border:1px solid #2d3748;border-radius:10px;padding:11px 14px;color:#e2e8f0;font-family:'DM Mono',monospace;font-size:15px;transition:border-color .2s;outline:none;}
+  .fi:focus{border-color:#3b82f6;}
+  .fit{font-family:'DM Sans',sans-serif!important;}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid transparent;background:#1e2535;transition:all .15s;margin:3px;}
+  .chip.on{border-color:#3b82f6!important;background:rgba(59,130,246,.15)!important;}
+  .ntab{padding:8px 12px;font-size:13px;font-weight:500;border:none;cursor:pointer;font-family:inherit;border-radius:10px 10px 0 0;background:transparent;color:#64748b;border-bottom:2px solid transparent;}
+  .ntab.on{background:#1e2a3a;color:#e2e8f0;border-bottom:2px solid #3b82f6;}
+  .eb{background:none;border:none;cursor:pointer;color:#4a5568;font-size:14px;padding:4px 6px;border-radius:6px;}
+  .eb:hover{color:#94a3b8;background:#1e2535;}
+  .ej{background:#0d1117;border:1px solid #2d3748;border-radius:8px;width:38px;height:38px;font-size:18px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:border-color .15s;margin:2px;}
+  .ej.on{border-color:#3b82f6;background:rgba(59,130,246,.1);}
+  .cd{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;display:inline-block;margin:3px;transition:all .15s;}
+  .cd.on{border-color:#fff;transform:scale(1.2);}
+  .spinner{width:32px;height:32px;border:3px solid #1e2535;border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #app{display:none;}
+  #loading,#error-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px;padding:24px;text-align:center;}
+  #error-screen{display:none;}
+  .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:20px 24px 0;}
+  .sum-card{padding:12px 14px;min-width:0;overflow:hidden;}
+  .sum-label{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sum-val{font-size:15px;font-weight:700;font-family:'DM Mono',monospace;margin-bottom:4px;word-break:break-all;line-height:1.2;}
+  .sum-sub{font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tabs{padding:20px 24px 0;display:flex;gap:6px;border-bottom:1px solid #1e2a3a;align-items:center;}
+  .content{padding:20px 24px 40px;}
+  .cat-item{padding:14px 18px;display:flex;align-items:center;gap:16px;transition:all .2s;}
+  .exp-item{padding:14px 18px;display:flex;align-items:center;gap:14px;transition:all .2s;}
+  .empty{padding:40px;text-align:center;color:#4a5568;}
+  select.fi{color:#e2e8f0;} option{background:#161b27;}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:14px;color:#64748b">Conectando con Google Drive…</div>
+</div>
+
+<div id="error-screen">
+  <div style="font-size:36px">⚠️</div>
+  <div style="font-weight:700;font-size:18px">Error al conectar</div>
+  <div id="error-msg" style="font-size:13px;color:#64748b;max-width:320px"></div>
+  <div style="font-size:12px;color:#4a5568;max-width:320px">Asegúrate de que la hoja esté compartida como "Cualquier persona con el enlace → Editor"</div>
+  <button class="bp" onclick="init()">Reintentar</button>
+</div>
+
+<div id="app">
+  <!-- HEADER -->
+  <div style="border-bottom:1px solid #1e2a3a;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:#4a90d9;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">Control Financiero</div>
+      <div style="font-size:20px;font-weight:700;letter-spacing:-.02em">Presupuesto Mensual</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="save-status" style="font-size:11px;font-family:'DM Mono',monospace;display:none"></div>
+      <button onclick="prevMonth()" style="background:#1e2535;border:none;color:#94a3b8;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px">‹</button>
+      <div style="text-align:center;min-width:110px"><div id="month-label" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600"></div></div>
+      <button onclick="nextMonth()" style="background:#1e2535;border:none;color:#94a3b8;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px">›</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-grid">
+    <div class="card sum-card">
+      <div class="sum-label">Presupuesto Total</div>
+      <div class="sum-val" id="s-budget" style="color:#4a90d9">$0</div>
+      <div class="sum-sub">Este mes</div>
+    </div>
+    <div class="card sum-card">
+      <div class="sum-label">Total Gastado</div>
+      <div class="sum-val" id="s-spent" style="color:#E8A838">$0</div>
+      <div class="sum-sub" id="s-pct">0% del presupuesto</div>
+    </div>
+    <div class="card sum-card">
+      <div class="sum-label">Disponible</div>
+      <div class="sum-val" id="s-left" style="color:#5DB87A">$0</div>
+      <div class="sum-sub" id="s-left-sub">Libre para gastar</div>
+    </div>
+  </div>
+  <div style="padding:14px 24px 0"><div class="pb"><div class="pf" id="global-bar" style="width:0%;background:#3b82f6"></div></div></div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="ntab on" onclick="setTab('dashboard',this)">📊 Presupuestos</button>
+    <button class="ntab" onclick="setTab('expenses',this)">💸 Gastos</button>
+    <button class="ntab" onclick="setTab('categories',this)">🏷 Categorías</button>
+    <div style="flex:1"></div>
+    <button class="bp" style="margin-bottom:4px;padding:8px 16px;font-size:13px" onclick="openExpenseModal()">+ Agregar gasto</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div id="tab-dashboard"></div>
+    <div id="tab-expenses" style="display:none"></div>
+    <div id="tab-categories" style="display:none"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = "1-CJycsVFxdMcaSXwv7uVjv_dNpSXG22RVX1H6acRiDI";
+const API_KEY  = "AIzaSyAJ_6xXs0T2iuB8yF4S9hxt9zhd745CSm0";
+const BASE     = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`;
+
+const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const DEFAULT_CATS = [
+  {id:"vivienda",label:"Vivienda",icon:"🏠",color:"#4A90D9"},
+  {id:"alimentacion",label:"Alimentación",icon:"🛒",color:"#E8A838"},
+  {id:"transporte",label:"Transporte",icon:"🚗",color:"#5DB87A"},
+  {id:"salud",label:"Salud",icon:"💊",color:"#E05C5C"},
+  {id:"entretenimiento",label:"Entretenimiento",icon:"🎬",color:"#9B6DD6"},
+  {id:"educacion",label:"Educación",icon:"📚",color:"#3BBCB8"},
+  {id:"ropa",label:"Ropa",icon:"👔",color:"#D4856A"},
+  {id:"ahorro",label:"Ahorro",icon:"💰",color:"#2ECC71"},
+  {id:"otros",label:"Otros",icon:"📦",color:"#95A5A6"},
+];
+const EMOJIS = ["🏠","🛒","🚗","💊","🎬","📚","👔","💰","📦","✈️","🍔","☕","🎮","🐾","💇","🏋️","🎵","🎁","🔧","💡","📱","🖥️","🎓","🏦","🏥","🍷","🛍️","🧴","⚡","🌐","🎯","🚀","🏖️","🎪","🎨","📷","🚴","🧘","🏡","🌿","💼","🤝","🎤","🧩","🛠️","🔑","🧾","🌙"];
+const COLORS = ["#4A90D9","#E8A838","#5DB87A","#E05C5C","#9B6DD6","#3BBCB8","#D4856A","#2ECC71","#95A5A6","#F39C12","#1ABC9C","#E74C3C","#8E44AD","#3498DB","#27AE60","#E67E22","#16A085","#C0392B","#2980B9","#D35400","#F1C40F","#7F8C8D","#6C5CE7","#00B894","#FD79A8","#0984E3","#55EFC4","#FDCB6E","#A29BFE","#E17055"];
+
+let now = new Date();
+let currentMonth = now.getMonth();
+let currentYear  = now.getFullYear();
+let categories   = [...DEFAULT_CATS];
+let budgets      = {};
+let expenses     = [];
+let currentTab   = "dashboard";
+let filterCat    = "all";
+let editingExpId = null;
+let editingCatId = null;
+let editingBudId = null;
+
+const fmt        = n => `$${Number(n).toLocaleString("es-CL")}`;
+const fmtInput   = r => { const d=String(r).replace(/\D/g,""); return d?Number(d).toLocaleString("es-CL"):""; };
+const parseInput = v => String(v).replace(/\./g,"");
+const monthKey   = () => `${currentYear}-${String(currentMonth+1).padStart(2,"0")}`;
+const getCat     = id => categories.find(c=>c.id===id)||{label:id,icon:"📦",color:"#95A5A6"};
+
+// ── SHEETS ────────────────────────────────────────────────────────────────────
+async function sheetsGet(range) {
+  const r = await fetch(`${BASE}/values/${encodeURIComponent(range)}?key=${API_KEY}`);
+  if (!r.ok) throw new Error(`Error leyendo hoja (${r.status}). Verifica que la API Key sea válida.`);
+  return (await r.json()).values || [];
+}
+async function sheetsClear(range) {
+  await fetch(`${BASE}/values/${encodeURIComponent(range)}:clear?key=${API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"}});
+}
+async function sheetsUpdate(range, values) {
+  await fetch(`${BASE}/values/${encodeURIComponent(range)}?valueInputOption=RAW&key=${API_KEY}`,
+    {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({range,majorDimension:"ROWS",values})});
+}
+async function ensureSheets(names) {
+  const r = await fetch(`${BASE}?key=${API_KEY}`);
+  if (!r.ok) throw new Error("No se puede acceder a la hoja. Asegúrate de que esté compartida como Editor.");
+  const meta = await r.json();
+  const existing = (meta.sheets||[]).map(s=>s.properties.title);
+  const missing  = names.filter(n=>!existing.includes(n));
+  if (!missing.length) return;
+  await fetch(`${BASE}:batchUpdate?key=${API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({requests:missing.map(title=>({addSheet:{properties:{title}}}))}));
+}
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+async function loadAll() {
+  await ensureSheets(["Categorias","Presupuestos","Gastos"]);
+  const mk = monthKey();
+  const [catRows,budRows,expRows] = await Promise.all([
+    sheetsGet("Categorias!A2:D"),
+    sheetsGet("Presupuestos!A2:C"),
+    sheetsGet("Gastos!A2:F"),
+  ]);
+  categories = catRows.length ? catRows.map(r=>({id:r[0]||"",label:r[1]||"",icon:r[2]||"📦",color:r[3]||"#95A5A6"})).filter(c=>c.id) : [...DEFAULT_CATS];
+  budgets = {};
+  budRows.forEach(r=>{ if(r[0]===mk&&r[1]&&r[2]) budgets[r[1]]=Number(r[2]); });
+  expenses = expRows.filter(r=>r[0]===mk&&r[1]).map(r=>({id:r[1],category:r[2]||"",amount:Number(r[3])||0,description:r[4]||"",date:r[5]||""}));
+}
+async function saveCats() {
+  await sheetsClear("Categorias!A2:D");
+  if(categories.length) await sheetsUpdate("Categorias!A2:D",categories.map(c=>[c.id,c.label,c.icon,c.color]));
+}
+async function saveBuds() {
+  const mk=monthKey(), all=await sheetsGet("Presupuestos!A2:C");
+  const others=all.filter(r=>r[0]!==mk);
+  const mine=Object.entries(budgets).map(([id,amt])=>[mk,id,String(amt)]);
+  await sheetsClear("Presupuestos!A2:C");
+  if([...others,...mine].length) await sheetsUpdate("Presupuestos!A2:C",[...others,...mine]);
+}
+async function saveExps() {
+  const mk=monthKey(), all=await sheetsGet("Gastos!A2:F");
+  const others=all.filter(r=>r[0]!==mk);
+  const mine=expenses.map(e=>[mk,String(e.id),e.category,String(e.amount),e.description||"",e.date||""]);
+  await sheetsClear("Gastos!A2:F");
+  if([...others,...mine].length) await sheetsUpdate("Gastos!A2:F",[...others,...mine]);
+}
+
+// ── STATUS ────────────────────────────────────────────────────────────────────
+let statusTimer;
+function showStatus(type) {
+  const el=document.getElementById("save-status");
+  el.style.display="block";
+  if(type==="saving"){el.style.color="#64748b";el.textContent="⏳ guardando…";}
+  else if(type==="saved"){el.style.color="#2ECC71";el.textContent="✓ guardado en Drive";}
+  else{el.style.color="#E05C5C";el.textContent="⚠ error al guardar";}
+  clearTimeout(statusTimer);
+  if(type!=="saving") statusTimer=setTimeout(()=>el.style.display="none",2500);
+}
+
+// ── DERIVED ───────────────────────────────────────────────────────────────────
+function totals() {
+  const totalBudget=Object.values(budgets).reduce((a,b)=>a+Number(b||0),0);
+  const totalSpent=expenses.reduce((a,e)=>a+Number(e.amount||0),0);
+  const totalLeft=totalBudget-totalSpent;
+  const globalPct=totalBudget>0?(totalSpent/totalBudget)*100:0;
+  return {totalBudget,totalSpent,totalLeft,globalPct};
+}
+function spentByCat() {
+  const s={};
+  expenses.forEach(e=>{s[e.category]=(s[e.category]||0)+Number(e.amount);});
+  return s;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderSummary();
+  renderMonthLabel();
+  if(currentTab==="dashboard") renderDashboard();
+  else if(currentTab==="expenses") renderExpenses();
+  else renderCategories();
+}
+
+function renderMonthLabel() {
+  document.getElementById("month-label").textContent=`${MONTHS[currentMonth]} ${currentYear}`;
+}
+
+function renderSummary() {
+  const {totalBudget,totalSpent,totalLeft,globalPct}=totals();
+  const pct=Math.round(globalPct);
+  document.getElementById("s-budget").textContent=fmt(totalBudget);
+  document.getElementById("s-spent").textContent=fmt(totalSpent);
+  document.getElementById("s-spent").style.color=globalPct>100?"#E05C5C":"#E8A838";
+  document.getElementById("s-pct").textContent=`${pct}% del presupuesto`;
+  document.getElementById("s-left").textContent=fmt(Math.max(totalLeft,0));
+  document.getElementById("s-left").style.color=totalLeft<0?"#E05C5C":"#5DB87A";
+  document.getElementById("s-left-sub").textContent=totalLeft<0?`⚠ Excedido ${fmt(Math.abs(totalLeft))}`:"Libre para gastar";
+  const bar=document.getElementById("global-bar");
+  bar.style.width=`${Math.min(globalPct,100)}%`;
+  bar.style.background=globalPct>90?"#E05C5C":globalPct>70?"#E8A838":"#3b82f6";
+}
+
+function renderDashboard() {
+  const sbc=spentByCat();
+  let html='<div style="font-size:13px;color:#64748b;margin-bottom:16px">Toca una categoría para ajustar su presupuesto</div><div style="display:grid;gap:10px">';
+  categories.forEach(cat=>{
+    const bud=Number(budgets[cat.id]||0),sp=sbc[cat.id]||0;
+    const pct=bud>0?(sp/bud)*100:0,left=bud-sp;
+    const bc=pct>100?"#E05C5C":pct>80?"#E8A838":cat.color;
+    const radial=bud>0?radialSVG(pct,cat.color):`<div style="width:56px;height:56px;border:2px dashed #2d3748;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#4a5568;font-size:20px">+</div>`;
+    html+=`<div class="card cat-item rh" onclick="openBudgetModal('${cat.id}')">
+      <div style="font-size:24px;width:36px;text-align:center">${cat.icon}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-weight:600;font-size:14px">${cat.label}</div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="font-size:13px"><span style="font-family:'DM Mono',monospace;color:${bc};font-weight:600">${fmt(sp)}</span>${bud>0?`<span style="color:#4a5568"> / ${fmt(bud)}</span>`:""}</div>
+            ${bud>0&&left<0?`<span style="font-size:11px;color:#E05C5C;font-weight:700;background:rgba(224,92,92,.1);padding:2px 8px;border-radius:4px">Excedido</span>`:""}
+            ${bud===0?`<span style="font-size:11px;color:#4a5568">Sin presupuesto</span>`:""}
+          </div>
+        </div>
+        <div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${bc}"></div></div>
+        ${bud>0?`<div style="font-size:11px;color:#4a5568;margin-top:4px">${left>=0?`${fmt(left)} disponible`:`${fmt(Math.abs(left))} excedido`}</div>`:""}
+      </div>
+      ${radial}
+    </div>`;
+  });
+  html+="</div>";
+  document.getElementById("tab-dashboard").innerHTML=html;
+}
+
+function radialSVG(pct,color,size=56) {
+  const r=(size-8)/2,circ=2*Math.PI*r,over=pct>100;
+  const c=over?"#E05C5C":color;
+  const offset=circ*(1-Math.min(pct,100)/100);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#1e2535" stroke-width="4"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${c}" stroke-width="4"
+      stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+      transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="${size/2}" y="${size/2+1}" text-anchor="middle" dominant-baseline="middle"
+      fill="${over?"#E05C5C":"#e2e8f0"}" font-size="10" font-family="monospace" font-weight="600">${Math.round(pct)}%</text>
+  </svg>`;
+}
+
+function renderExpenses() {
+  const filtered=filterCat==="all"?expenses:expenses.filter(e=>e.category===filterCat);
+  const usedCats=categories.filter(c=>expenses.some(e=>e.category===c.id));
+  let chips=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px">
+    <span class="chip ${filterCat==="all"?"on":""}" style="color:#94a3b8" onclick="setFilter('all')">Todos (${expenses.length})</span>`;
+  usedCats.forEach(cat=>{
+    chips+=`<span class="chip ${filterCat===cat.id?"on":""}" style="color:${cat.color}" onclick="setFilter('${cat.id}')">${cat.icon} ${cat.label}</span>`;
+  });
+  chips+="</div>";
+  let list="";
+  if(!filtered.length){
+    list=`<div class="card empty"><div style="font-size:40px;margin-bottom:12px">💸</div><div style="font-size:15px;font-weight:500;margin-bottom:4px">Sin gastos registrados</div><div style="font-size:13px">Agrega tu primer gasto del mes</div></div>`;
+  } else {
+    list=`<div style="display:grid;gap:8px">`;
+    filtered.forEach(exp=>{
+      const cat=getCat(exp.category);
+      list+=`<div class="card exp-item rh" onclick="openEditExpense('${exp.id}')">
+        <div style="font-size:22px;width:32px;text-align:center">${cat.icon}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px;margin-bottom:2px">${exp.description||cat.label}</div>
+          <div style="font-size:12px;color:#4a5568">${exp.date} · ${cat.label}</div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:16px;color:${cat.color}">${fmt(exp.amount)}</div>
+      </div>`;
+    });
+    const total=filtered.reduce((a,e)=>a+e.amount,0);
+    list+=`<div class="card" style="padding:12px 18px;display:flex;justify-content:space-between;background:#0d1117">
+      <span style="color:#64748b;font-weight:600">Total filtrado</span>
+      <span style="font-family:'DM Mono',monospace;font-weight:700">${fmt(total)}</span>
+    </div></div>`;
+  }
+  document.getElementById("tab-expenses").innerHTML=chips+list;
+}
+
+function renderCategories() {
+  const sbc=spentByCat();
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div style="font-size:13px;color:#64748b">${categories.length} categorías · toca ✏️ para editar</div>
+    <button class="bp" style="padding:8px 16px;font-size:13px" onclick="openNewCat()">+ Nueva categoría</button>
+  </div><div style="display:grid;gap:10px">`;
+  categories.forEach(cat=>{
+    const isDef=DEFAULT_CATS.some(d=>d.id===cat.id);
+    const sp=sbc[cat.id]||0,bud=Number(budgets[cat.id]||0);
+    html+=`<div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:14px">
+      <div style="width:42px;height:42px;border-radius:12px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid ${cat.color}44">${cat.icon}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+          <span style="font-weight:600;font-size:15px">${cat.label}</span>
+          ${isDef?`<span style="font-size:10px;color:#4a5568;background:#1e2535;padding:1px 6px;border-radius:4px">predeterminada</span>`:""}
+        </div>
+        <div style="font-size:12px;color:#4a5568">${bud>0?`Presupuesto: ${fmt(bud)} · Gastado: ${fmt(sp)}`:"Sin presupuesto asignado"}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${cat.color}"></div>
+        <button class="eb" onclick="openEditCat('${cat.id}')">✏️</button>
+      </div>
+    </div>`;
+  });
+  html+="</div>";
+  document.getElementById("tab-categories").innerHTML=html;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function setTab(tab, btn) {
+  currentTab=tab;
+  document.querySelectorAll(".ntab").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  ["dashboard","expenses","categories"].forEach(t=>{
+    document.getElementById(`tab-${t}`).style.display=t===tab?"block":"none";
+  });
+  renderAll();
+}
+function setFilter(cat) {
+  filterCat=cat;
+  renderExpenses();
+}
+
+// ── MONTH NAV ─────────────────────────────────────────────────────────────────
+function prevMonth() {
+  filterCat="all";
+  if(currentMonth===0){currentMonth=11;currentYear--;}else currentMonth--;
+  init();
+}
+function nextMonth() {
+  filterCat="all";
+  if(currentMonth===11){currentMonth=0;currentYear++;}else currentMonth++;
+  init();
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(html) { document.getElementById("modal-body").innerHTML=html; document.getElementById("modal").style.display="flex"; }
+function closeModal()    { document.getElementById("modal").style.display="none"; }
+
+// Amount input helper
+function amountInput(id, value, placeholder) {
+  const display=value?fmtInput(String(value)):"";
+  return `<input class="fi" id="${id}" type="text" inputmode="numeric" placeholder="${placeholder}" value="${display}"
+    oninput="this.value=fmtInput(parseInput(this.value))" autofocus>`;
+}
+
+// ── BUDGET MODAL ──────────────────────────────────────────────────────────────
+function openBudgetModal(catId) {
+  editingBudId=catId;
+  const cat=getCat(catId);
+  const val=budgets[catId]||"";
+  openModal(`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
+      <div style="width:48px;height:48px;border-radius:14px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;font-size:26px">${cat.icon}</div>
+      <div>
+        <div style="font-weight:700;font-size:17px">Presupuesto: ${cat.label}</div>
+        <div style="color:#64748b;font-size:13px">Define cuánto puedes gastar</div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px">
+      <label class="fl">Monto ($CLP)</label>
+      ${amountInput("bud-amount",val,"Ej: 200.000")}
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="bg" style="flex:1" onclick="closeModal()">Cancelar</button>
+      ${val?`<button class="bg" style="color:#E05C5C;border-color:#E05C5C" onclick="removeBudget()">Quitar</button>`:""}
+      <button class="bp" style="flex:1" onclick="saveBudget()">Guardar</button>
+    </div>
+  `);
+}
+async function saveBudget() {
+  const raw=parseInput(document.getElementById("bud-amount").value);
+  const n=Number(raw); if(!n||n<=0)return;
+  budgets[editingBudId]=n; closeModal(); renderAll();
+  showStatus("saving");
+  try{await saveBuds();showStatus("saved");}catch{showStatus("error");}
+}
+async function removeBudget() {
+  delete budgets[editingBudId]; closeModal(); renderAll();
+  showStatus("saving");
+  try{await saveBuds();showStatus("saved");}catch{showStatus("error");}
+}
+
+// ── EXPENSE MODAL ─────────────────────────────────────────────────────────────
+function openExpenseModal() {
+  editingExpId=null;
+  const today=new Date().toISOString().split("T")[0];
+  openModal(`
+    <div style="font-weight:700;font-size:18px;margin-bottom:20px">Nuevo gasto</div>
+    <div style="display:grid;gap:14px">
+      <div>
+        <label class="fl">Categoría</label>
+        <select class="fi fit" id="exp-cat">${categories.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join("")}</select>
+      </div>
+      <div><label class="fl">Monto ($CLP)</label>${amountInput("exp-amount","","Ej: 15.000")}</div>
+      <div><label class="fl">Descripción</label><input class="fi fit" id="exp-desc" placeholder="Ej: Supermercado Líder"></div>
+      <div><label class="fl">Fecha</label><input class="fi fit" id="exp-date" type="date" value="${today}"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:22px">
+      <button class="bg" style="flex:1" onclick="closeModal()">Cancelar</button>
+      <button class="bp" style="flex:1" onclick="saveExpense()">Agregar</button>
+    </div>
+  `);
+}
+function openEditExpense(id) {
+  editingExpId=id;
+  const exp=expenses.find(e=>e.id==id); if(!exp)return;
+  openModal(`
+    <div style="font-weight:700;font-size:18px;margin-bottom:20px">Editar gasto</div>
+    <div style="display:grid;gap:14px">
+      <div>
+        <label class="fl">Categoría</label>
+        <select class="fi fit" id="exp-cat">${categories.map(c=>`<option value="${c.id}"${c.id===exp.category?" selected":""}>${c.icon} ${c.label}</option>`).join("")}</select>
+      </div>
+      <div><label class="fl">Monto ($CLP)</label>${amountInput("exp-amount",exp.amount,"Ej: 15.000")}</div>
+      <div><label class="fl">Descripción</label><input class="fi fit" id="exp-desc" value="${exp.description||""}" placeholder="Ej: Supermercado Líder"></div>
+      <div><label class="fl">Fecha</label><input class="fi fit" id="exp-date" type="date" value="${exp.date||""}"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:22px">
+      <button class="bg" style="flex:1" onclick="closeModal()">Cancelar</button>
+      <button class="bg" style="color:#E05C5C;border-color:#E05C5C" onclick="deleteExpense('${id}')">Eliminar</button>
+      <button class="bp" style="flex:1" onclick="saveExpense()">Actualizar</button>
+    </div>
+  `);
+}
+async function saveExpense() {
+  const raw=parseInput(document.getElementById("exp-amount").value);
+  const n=Number(raw); if(!n)return;
+  const exp={
+    id:editingExpId||Date.now(),
+    category:document.getElementById("exp-cat").value,
+    amount:n,
+    description:document.getElementById("exp-desc").value,
+    date:document.getElementById("exp-date").value,
+  };
+  if(editingExpId) expenses=expenses.map(e=>e.id==editingExpId?exp:e);
+  else expenses=[exp,...expenses];
+  closeModal(); renderAll();
+  showStatus("saving");
+  try{await saveExps();showStatus("saved");}catch{showStatus("error");}
+}
+async function deleteExpense(id) {
+  expenses=expenses.filter(e=>e.id!=id); closeModal(); renderAll();
+  showStatus("saving");
+  try{await saveExps();showStatus("saved");}catch{showStatus("error");}
+}
+
+// ── CATEGORY MODAL ────────────────────────────────────────────────────────────
+function openNewCat() {
+  editingCatId=null;
+  const color=COLORS[Math.floor(Math.random()*COLORS.length)];
+  openCatModal("","⭐",color);
+}
+function openEditCat(id) {
+  editingCatId=id;
+  const cat=categories.find(c=>c.id===id); if(!cat)return;
+  openCatModal(cat.label,cat.icon,cat.color);
+}
+function openCatModal(label,icon,color) {
+  const isDef=editingCatId&&DEFAULT_CATS.some(d=>d.id===editingCatId);
+  openModal(`
+    <div style="font-weight:700;font-size:18px;margin-bottom:22px">${editingCatId?"Editar categoría":"Nueva categoría"}</div>
+    <div style="margin-bottom:18px">
+      <label class="fl">Nombre</label>
+      <input class="fi fit" id="cat-name" value="${label}" placeholder="Ej: Mascotas, Streaming…" autofocus>
+    </div>
+    <div style="margin-bottom:18px">
+      <label class="fl" style="margin-bottom:10px">Ícono — elegido: <span id="icon-preview" style="font-size:18px">${icon}</span></label>
+      <div id="emoji-grid" style="display:flex;flex-wrap:wrap">${EMOJIS.map(em=>`<button class="ej ${em===icon?"on":""}" onclick="selectIcon('${em}',this)">${em}</button>`).join("")}</div>
+    </div>
+    <div style="margin-bottom:22px">
+      <label class="fl" style="margin-bottom:10px">Color</label>
+      <div style="display:flex;flex-wrap:wrap">${COLORS.map(c=>`<div class="cd ${c===color?"on":""}" style="background:${c}" onclick="selectColor('${c}',this)"></div>`).join("")}</div>
+      <div id="cat-preview" style="margin-top:14px;display:flex;align-items:center;gap:10px;background:#0d1117;border-radius:10px;padding:10px 14px">
+        <div id="prev-icon" style="width:36px;height:36px;border-radius:10px;background:${color}22;display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid ${color}55">${icon}</div>
+        <span id="prev-label" style="font-weight:600;color:${color}">${label||"Vista previa"}</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="bg" style="flex:1" onclick="closeModal()">Cancelar</button>
+      ${editingCatId&&!isDef?`<button class="bg" style="color:#E05C5C;border-color:#E05C5C" onclick="deleteCat()">Eliminar</button>`:""}
+      <button class="bp" style="flex:1" onclick="saveCat()">${editingCatId?"Guardar":"Crear"}</button>
+    </div>
+  `);
+  // store current selections
+  window._catIcon=icon; window._catColor=color;
+  document.getElementById("cat-name").addEventListener("input",e=>{
+    document.getElementById("prev-label").textContent=e.target.value||"Vista previa";
+  });
+}
+function selectIcon(em,btn) {
+  window._catIcon=em;
+  document.getElementById("icon-preview").textContent=em;
+  document.getElementById("prev-icon").textContent=em;
+  document.querySelectorAll(".ej").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+}
+function selectColor(c,el) {
+  window._catColor=c;
+  const pi=document.getElementById("prev-icon");
+  pi.style.background=c+"22"; pi.style.border=`1px solid ${c}55`;
+  document.getElementById("prev-label").style.color=c;
+  document.querySelectorAll(".cd").forEach(d=>d.classList.remove("on"));
+  el.classList.add("on");
+}
+async function saveCat() {
+  const label=document.getElementById("cat-name").value.trim(); if(!label)return;
+  if(editingCatId) categories=categories.map(c=>c.id===editingCatId?{...c,label,icon:window._catIcon,color:window._catColor}:c);
+  else categories=[...categories,{id:`custom-${Date.now()}`,label,icon:window._catIcon,color:window._catColor}];
+  closeModal(); renderAll();
+  showStatus("saving");
+  try{await saveCats();showStatus("saved");}catch{showStatus("error");}
+}
+async function deleteCat() {
+  categories=categories.filter(c=>c.id!==editingCatId); closeModal(); renderAll();
+  showStatus("saving");
+  try{await saveCats();showStatus("saved");}catch{showStatus("error");}
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  document.getElementById("loading").style.display="flex";
+  document.getElementById("error-screen").style.display="none";
+  document.getElementById("app").style.display="none";
+  try {
+    await loadAll();
+    document.getElementById("loading").style.display="none";
+    document.getElementById("app").style.display="block";
+    renderAll();
+  } catch(e) {
+    document.getElementById("loading").style.display="none";
+    document.getElementById("error-msg").textContent=e.message;
+    document.getElementById("error-screen").style.display="flex";
+  }
+}
+
+// Make fmtInput/parseInput available globally for inline oninput
+window.fmtInput=fmtInput;
+window.parseInput=parseInput;
+
+init();
+</script>
+</body>
+</html>
