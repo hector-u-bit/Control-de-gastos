@@ -195,6 +195,57 @@ select.fi option{background:#1a1a26;}
 .spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.08);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto;}
 @keyframes sp{to{transform:rotate(360deg)}}
 
+/* ── HÉROE ── */
+.hero-card{background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+ border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:14px}
+.hero-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:8px}
+.hero-num{font-family:'DM Mono',monospace;font-weight:700;font-size:38px;letter-spacing:-1.5px;line-height:1;color:var(--green);word-break:break-all}
+.hero-sub{font-size:12px;color:var(--text2);margin-top:8px}
+.hero-foot{display:flex;gap:18px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.hero-foot>div{flex:1;min-width:0}
+.hf-l{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:4px}
+.hf-v{font-family:'DM Mono',monospace;font-weight:700;font-size:15px;word-break:break-all}
+
+/* ── FILTROS DE GASTOS ── */
+.srch{position:relative;margin-bottom:12px}
+.srch input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:13px;
+ padding:11px 38px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color .2s}
+.srch input:focus{border-color:var(--blue);background:rgba(79,142,247,.07)}
+.srch .mag{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.5;pointer-events:none}
+.srch .clr{position:absolute;right:9px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.1);
+ border:none;color:var(--text2);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:13px;line-height:1}
+.wkrow{display:flex;gap:5px;margin-bottom:11px}
+.wkrow button{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text3);
+ border-radius:12px;padding:9px 2px;font-family:inherit;cursor:pointer;transition:all .22s;min-width:0}
+.wkrow button.on{background:rgba(79,142,247,.16);border-color:var(--blue);color:var(--blue)}
+.wkrow .wl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.wkrow .wv{font-size:10px;font-family:'DM Mono',monospace;font-weight:600;margin-top:3px;opacity:.8;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.calrow{display:flex;gap:5px;margin-bottom:11px}
+.dcell{flex:1;border-radius:13px;background:rgba(255,255,255,.04);border:1px solid var(--border);
+ padding:8px 0 7px;text-align:center;cursor:pointer;transition:all .22s;min-width:0}
+.dcell.on{background:rgba(79,142,247,.18);border-color:var(--blue);transform:translateY(-2px)}
+.dcell.on .dnum{color:var(--blue)}
+.dcell.void{opacity:.3}
+.dwd{font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:700}
+.dnum{font-size:15px;font-weight:700;font-family:'DM Mono',monospace;line-height:1.35}
+.dbar{border-radius:2px;margin:3px auto 0;width:18px}
+.selrow{display:flex;justify-content:space-between;align-items:baseline;padding:2px 4px 12px;gap:10px}
+.selrow .l{font-size:14px;font-weight:700;min-width:0}
+.selrow .s{font-size:11px;color:var(--text3);font-weight:500;margin-left:6px}
+.selrow .r{font-family:'DM Mono',monospace;font-weight:700;font-size:16px;color:var(--amber);white-space:nowrap}
+.dayhdr{display:flex;justify-content:space-between;align-items:baseline;padding:10px 4px 6px}
+.dayhdr b{font-size:12px;color:var(--text2);font-weight:600}
+.dayhdr span{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);font-weight:600}
+
+/* ── SWIPE ── */
+.sw-row{position:relative;overflow:hidden;border-radius:18px;margin-bottom:10px}
+.sw-bg{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,95,87,0),var(--red) 45%);
+ display:flex;align-items:center;justify-content:flex-end;padding-right:22px;
+ font-weight:700;font-size:14px;color:#fff;cursor:pointer}
+.sw-fg{position:relative;background:#14141f;border:1px solid var(--border);border-radius:18px;
+ transition:transform .28s cubic-bezier(.32,1,.5,1);touch-action:pan-y}
+
 /* ── DONA ── */
 .donut-wrap{display:flex;align-items:center;gap:16px}
 .donut-svg{transform-origin:center;flex-shrink:0}
@@ -299,24 +350,23 @@ select.fi option{background:#1a1a26;}
       </div>
     </div>
 
-    <!-- SUMMARY INLINE -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
-      <div class="sum-card">
-        <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Presupuesto</div>
-        <div id="s-bud" style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--blue);word-break:break-all;line-height:1.15">$0</div>
-      </div>
-      <div class="sum-card">
-        <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Gastado</div>
-        <div id="s-spt" style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--amber);word-break:break-all;line-height:1.15">$0</div>
-        <div id="s-pct" style="font-size:10px;color:var(--text3);margin-top:3px">0%</div>
-      </div>
-      <div class="sum-card">
-        <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Disponible</div>
-        <div id="s-lft" style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green);word-break:break-all;line-height:1.15">$0</div>
-        <div id="s-lft-sub" style="font-size:10px;color:var(--text3);margin-top:3px">Libre</div>
+    <!-- HÉROE -->
+    <div class="hero-card">
+      <div class="hero-lbl">Disponible este mes</div>
+      <div id="s-lft" class="hero-num">$0</div>
+      <div id="s-lft-sub" class="hero-sub">Libre para gastar</div>
+      <div class="pb" style="margin-top:16px"><div class="pf" id="g-bar" style="width:0%;background:var(--blue)"></div></div>
+      <div class="hero-foot">
+        <div>
+          <div class="hf-l">Presupuesto</div>
+          <div id="s-bud" class="hf-v" style="color:var(--blue)">$0</div>
+        </div>
+        <div>
+          <div class="hf-l">Gastado <span id="s-pct" style="color:var(--text3);font-weight:600">0%</span></div>
+          <div id="s-spt" class="hf-v" style="color:var(--amber)">$0</div>
+        </div>
       </div>
     </div>
-    <div class="pb"><div class="pf" id="g-bar" style="width:0%;background:var(--blue)"></div></div>
   </div>
 
   <!-- CONTENT -->
@@ -372,7 +422,7 @@ const EMOJIS=["🏠","🛒","🚗","💊","🎬","📚","👔","💰","📦","�
 const COLORS=["#4f8ef7","#ffb340","#34d17a","#ff5f57","#bf5af2","#32d2d2","#ff9f0a","#30d158","#636379","#ff6b6b","#ffd93d","#6bcb77","#4d96ff","#ff6b9d","#c77dff","#48cae4","#f4a261","#2ec4b6","#e76f51","#a8dadc"];
 
 let curMonth=new Date().getMonth(), curYear=new Date().getFullYear();
-let cats=[...DEF_CATS], buds={}, exps=[], filtCat="all";
+let cats=[...DEF_CATS], buds={}, exps=[];
 let editExpId=null, editCatId=null, editBudId=null;
 
 const fmt=n=>`$${Number(n).toLocaleString("es-CL")}`;
@@ -380,6 +430,21 @@ const fmtI=r=>{const d=String(r).replace(/\D/g,"");return d?Number(d).toLocaleSt
 const parseI=v=>String(v).replace(/\./g,"");
 const mk=()=>`${curYear}-${String(curMonth+1).padStart(2,"0")}`;
 const getC=id=>cats.find(c=>c.id===id)||{label:id,icon:"📦",color:"#636379"};
+
+// ── SUBTÍTULO DEL HÉROE ───────────────────────────────────────────────────────
+function diasDelMes(y,m){return new Date(y,m+1,0).getDate();}
+function subtituloHeroe(tb,ts,tl){
+  const hoy=new Date();
+  const esMesActual=(hoy.getFullYear()===curYear&&hoy.getMonth()===curMonth);
+  const total=diasDelMes(curYear,curMonth);
+  const restan=esMesActual?total-hoy.getDate():0;
+  if(tb<=0)return "Aún no defines presupuestos";
+  const pctLibre=Math.max(0,Math.round(tl/tb*100));
+  if(tl<0)return `Excedido · llevas <strong style="color:var(--text)">${Math.round(ts/tb*100)}%</strong> del presupuesto`;
+  let t=`Te queda el <strong style="color:var(--text)">${pctLibre}%</strong>`;
+  if(esMesActual)t+= restan>0?` · faltan <strong style="color:var(--text)">${restan}</strong> día${restan===1?"":"s"}`:" · último día del mes";
+  return t;
+}
 
 // ── HÁPTICA ───────────────────────────────────────────────────────────────────
 // Android usa navigator.vibrate. iOS 17.4+ responde al toggle de un <input switch>.
@@ -493,6 +558,10 @@ function show(id){
 function showErr(m){document.getElementById("error-msg").textContent=m;show("s-error");}
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
+function resetFiltros(){
+  busq="";selDia=null;selBloque=0;
+}
+
 function renderAll(){
   document.getElementById("month-lbl").textContent=`${MONTHS[curMonth]} ${curYear}`;
   const tb=Object.values(buds).reduce((a,b)=>a+Number(b||0),0);
@@ -502,9 +571,9 @@ function renderAll(){
   countTo(document.getElementById("s-spt"),ts);
   document.getElementById("s-spt").style.color=pct>100?"var(--red)":"var(--amber)";
   document.getElementById("s-pct").textContent=`${Math.round(pct)}%`;
-  countTo(document.getElementById("s-lft"),Math.max(tl,0));
+  countTo(document.getElementById("s-lft"),Math.abs(tl));
   document.getElementById("s-lft").style.color=tl<0?"var(--red)":"var(--green)";
-  document.getElementById("s-lft-sub").textContent=tl<0?"⚠ Excedido":"Libre";
+  document.getElementById("s-lft-sub").innerHTML=subtituloHeroe(tb,ts,tl);
   const bar=document.getElementById("g-bar");
   bar.style.width=`${Math.min(pct,100)}%`;
   bar.style.background=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--blue)";
@@ -583,40 +652,169 @@ function renderDash(){
   animateDonut();
 }
 
+// ── GASTOS: bloques + calendario + buscador ───────────────────────────────────
+let selBloque=0;      // 0..3 = bloque · -1 = mes completo
+let selDia=null;      // día concreto o null
+let busq="";
+
+function bloquesDelMes(){
+  const dias=diasDelMes(curYear,curMonth);
+  const base=Math.floor(dias/4), extra=dias%4;
+  const out=[];let ini=1;
+  for(let i=0;i<4;i++){const len=base+(i<extra?1:0);out.push([ini,ini+len-1]);ini+=len;}
+  return out;
+}
+function diaDe(exp){const n=parseInt((exp.date||"").split("-")[2],10);return isNaN(n)?0:n;}
+function totalDia(d){return exps.filter(e=>diaDe(e)===d).reduce((a,e)=>a+e.amount,0);}
+function totalRango(a,b){return exps.filter(e=>{const d=diaDe(e);return d>=a&&d<=b;}).reduce((s,e)=>s+e.amount,0);}
+const fmtK=n=>n>=1000?`$${Math.round(n/1000)}k`:`$${n}`;
+const DIA_LETRA=["D","L","M","M","J","V","S"];
+
+function pickBloque(i){haptic("light");selBloque=i;selDia=null;renderExps();}
+function pickDia(d){haptic("light");selDia=(selDia===d?null:d);renderExps();}
+function onBuscar(v){busq=v;renderExps();}
+function limpiarBusq(){haptic("light");busq="";renderExps();}
+
 function renderExps(){
-  const fil=filtCat==="all"?exps:exps.filter(e=>e.category===filtCat);
-  const used=cats.filter(c=>exps.some(e=>e.category===c.id));
-  let h=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px">
-    <span class="chip ${filtCat==="all"?"on":""}" onclick="setFilt('all')">Todos · ${exps.length}</span>`;
-  used.forEach(c=>{h+=`<span class="chip ${filtCat===c.id?"on":""}" style="${filtCat===c.id?`color:${c.color};border-color:${c.color};background:${c.color}18`:""}" onclick="setFilt('${c.id}')">${c.icon} ${c.label}</span>`;});
-  h+="</div>";
-  if(!fil.length){
-    h+=`<div class="card" style="padding:48px 24px;text-align:center;color:var(--text3)">
-      <div style="font-size:48px;margin-bottom:14px">💸</div>
-      <div style="font-size:16px;font-weight:600;margin-bottom:6px;color:var(--text2)">Sin gastos</div>
-      <div style="font-size:13px">Toca el <strong style="color:var(--blue)">+</strong> para agregar tu primer gasto</div>
+  const q=busq.toLowerCase().trim(), buscando=q.length>0;
+  const bloques=bloquesDelMes();
+  if(selBloque>=bloques.length)selBloque=0;
+
+  // buscador
+  let h=`<div class="srch">
+    <span class="mag">🔍</span>
+    <input id="q-gastos" placeholder="Buscar gasto…" value="${busq.replace(/"/g,"&quot;")}"
+      oninput="onBuscar(this.value)" autocomplete="off"/>
+    ${busq?`<button class="clr" onclick="limpiarBusq()">✕</button>`:""}
+  </div>`;
+
+  // bloques
+  const totMes=exps.reduce((a,e)=>a+e.amount,0);
+  h+=`<div class="wkrow">`;
+  bloques.forEach((b,i)=>{
+    const t=totalRango(b[0],b[1]);
+    h+=`<button class="${!buscando&&i===selBloque?"on":""}" onclick="pickBloque(${i})">
+      <div class="wl">S${i+1}</div><div class="wv">${t?fmtK(t):"—"}</div></button>`;
+  });
+  h+=`<button class="${!buscando&&selBloque===-1?"on":""}" onclick="pickBloque(-1)">
+    <div class="wl">Mes</div><div class="wv">${totMes?fmtK(totMes):"—"}</div></button></div>`;
+
+  // tira de días
+  if(!buscando&&selBloque>=0){
+    const [a,b]=bloques[selBloque];
+    const maxD=Math.max(...exps.map(e=>totalDia(diaDe(e))),1);
+    const pDia=new Date(curYear,curMonth,1).getDay();
+    h+=`<div class="calrow">`;
+    for(let d=a;d<=b;d++){
+      const t=totalDia(d), alto=t?Math.max(3,(t/maxD)*13):3;
+      const col=!t?"rgba(255,255,255,.07)":t>maxD*.5?"var(--red)":t>maxD*.15?"var(--amber)":"var(--green)";
+      h+=`<div class="dcell ${selDia===d?"on":""} ${t?"":"void"}" onclick="pickDia(${d})">
+        <div class="dwd">${DIA_LETRA[(pDia+d-1)%7]}</div>
+        <div class="dnum">${d}</div>
+        <div class="dbar" style="height:${alto}px;background:${col}"></div></div>`;
+    }
+    h+=`</div>`;
+  }
+
+  // selección
+  let lista,titulo,sub="";
+  if(buscando){
+    lista=exps.filter(e=>(e.description||"").toLowerCase().includes(q)||getC(e.category).label.toLowerCase().includes(q));
+    titulo="Resultados";sub=`“${busq}”`;
+  }else if(selBloque===-1){
+    lista=[...exps];titulo=MONTHS[curMonth];
+  }else if(selDia){
+    lista=exps.filter(e=>diaDe(e)===selDia);titulo=`${selDia} de ${MONTHS[curMonth].toLowerCase()}`;
+  }else{
+    const [a,b]=bloques[selBloque];
+    lista=exps.filter(e=>{const d=diaDe(e);return d>=a&&d<=b;});
+    titulo=`Semana ${selBloque+1}`;sub=`${a}–${b}`;
+  }
+  lista=[...lista].sort((x,y)=>diaDe(y)-diaDe(x));
+  const tot=lista.reduce((a,e)=>a+e.amount,0);
+  h+=`<div class="selrow">
+    <span class="l">${titulo}<span class="s">${sub?sub+" · ":""}${lista.length} gasto${lista.length===1?"":"s"}</span></span>
+    <span class="r">${fmt(tot)}</span></div>`;
+
+  // lista
+  if(!lista.length){
+    h+=`<div class="card" style="padding:44px 22px;text-align:center;color:var(--text3)">
+      <div style="font-size:44px;margin-bottom:12px">${buscando?"🔍":"💸"}</div>
+      <div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px">
+        ${buscando?"Sin resultados":"Sin gastos en este período"}</div>
+      <div style="font-size:13px">${buscando?"Prueba con otra palabra":'Toca el <strong style="color:var(--blue)">+</strong> para agregar'}</div>
     </div>`;
   }else{
-    h+='<div style="display:grid;gap:10px">';
-    fil.forEach(exp=>{
+    const agrupar=!selDia;
+    let last=null;
+    lista.forEach(exp=>{
+      const d=diaDe(exp);
+      if(agrupar&&d!==last){
+        h+=`<div class="dayhdr"><b>${d} de ${MONTHS[curMonth].toLowerCase()}</b><span>${fmt(totalDia(d))}</span></div>`;
+        last=d;
+      }
       const cat=getC(exp.category);
-      h+=`<div class="card card-press" style="padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer" onclick="openEditExp('${exp.id}')">
-        <div style="width:44px;height:44px;border-radius:14px;background:${cat.color}18;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:1px solid ${cat.color}30">${cat.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:15px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${exp.description||cat.label}</div>
-          <div style="font-size:12px;color:var(--text2)">${exp.date} · ${cat.label}</div>
-        </div>
-        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:16px;color:${cat.color};white-space:nowrap;flex-shrink:0">${fmt(exp.amount)}</div>
-      </div>`;
+      h+=`<div class="sw-row" data-id="${exp.id}">
+        <div class="sw-bg" onclick="delExpM('${exp.id}')">Eliminar</div>
+        <div class="sw-fg" style="padding:13px 15px;display:flex;align-items:center;gap:13px" onclick="tapExp(event,'${exp.id}')">
+          <div style="width:42px;height:42px;border-radius:13px;background:${cat.color}18;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;border:1px solid ${cat.color}30">${cat.icon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${exp.description||cat.label}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">${cat.label}</div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:15px;color:${cat.color};white-space:nowrap;flex-shrink:0">${fmt(exp.amount)}</div>
+        </div></div>`;
     });
-    const total=fil.reduce((a,e)=>a+e.amount,0);
-    h+=`<div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:4px">
-      <span style="color:var(--text2);font-weight:600;font-size:14px">Total${filtCat!=="all"?" filtrado":""}</span>
-      <span style="font-family:'DM Mono',monospace;font-weight:700;font-size:16px">${fmt(total)}</span>
-    </div></div>`;
   }
+
   const el=document.getElementById("tab-expenses");
   el.innerHTML=h;el.className="fade-in";
+  activarSwipe();
+  const inp=document.getElementById("q-gastos");
+  if(inp&&busq){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
+}
+
+// ── SWIPE PARA ELIMINAR ───────────────────────────────────────────────────────
+let filaAbierta=null;
+function tapExp(e,id){
+  if(filaAbierta){cerrarSwipe();return;}
+  openEditExp(id);
+}
+function cerrarSwipe(){
+  if(!filaAbierta)return;
+  filaAbierta.style.transition="transform .28s cubic-bezier(.32,1,.5,1)";
+  filaAbierta.style.transform="translateX(0)";
+  filaAbierta=null;
+}
+function activarSwipe(){
+  filaAbierta=null;
+  document.querySelectorAll("#tab-expenses .sw-row").forEach(row=>{
+    const fg=row.querySelector(".sw-fg");
+    let x0=0,dx=0,abierta=false,arrastrando=false,vibrado=false;
+    const LIM=-96;
+    fg.addEventListener("touchstart",ev=>{
+      if(filaAbierta&&filaAbierta!==fg)cerrarSwipe();
+      x0=ev.touches[0].clientX;arrastrando=true;vibrado=false;
+      fg.style.transition="none";
+    },{passive:true});
+    fg.addEventListener("touchmove",ev=>{
+      if(!arrastrando)return;
+      dx=ev.touches[0].clientX-x0+(abierta?LIM:0);
+      if(dx>0)dx*=.25;
+      if(dx<LIM-40)dx=LIM-40+(dx-(LIM-40))*.25;
+      if(dx<LIM*.7&&!vibrado){haptic("light");vibrado=true;}
+      fg.style.transform=`translateX(${dx}px)`;
+    },{passive:true});
+    fg.addEventListener("touchend",()=>{
+      if(!arrastrando)return;
+      arrastrando=false;
+      fg.style.transition="transform .28s cubic-bezier(.32,1,.5,1)";
+      abierta=dx<LIM/2;
+      fg.style.transform=`translateX(${abierta?LIM:0}px)`;
+      filaAbierta=abierta?fg:null;
+      dx=abierta?LIM:0;
+    });
+  });
 }
 
 function renderCats(){
@@ -655,12 +853,18 @@ function setTab(tab,btn){
   });
   renderAll();
 }
-function setFilt(cat){haptic("light");filtCat=cat;renderExps();}
-async function prevMonth(){haptic("light");filtCat="all";curMonth===0?(curMonth=11,curYear--):curMonth--;await loadAndRender();}
-async function nextMonth(){haptic("light");filtCat="all";curMonth===11?(curMonth=0,curYear++):curMonth++;await loadAndRender();}
+async function prevMonth(){haptic("light");resetFiltros();curMonth===0?(curMonth=11,curYear--):curMonth--;await loadAndRender();}
+async function nextMonth(){haptic("light");resetFiltros();curMonth===11?(curMonth=0,curYear++):curMonth++;await loadAndRender();}
+function bloqueDeHoy(){
+  const hoy=new Date();
+  if(hoy.getFullYear()!==curYear||hoy.getMonth()!==curMonth)return 0;
+  const bl=bloquesDelMes(),d=hoy.getDate();
+  const i=bl.findIndex(b=>d>=b[0]&&d<=b[1]);
+  return i<0?0:i;
+}
 async function loadAndRender(){
   show("s-loading");
-  try{await loadAll();show("app");renderAll();}catch(e){showErr(e.message);}
+  try{await loadAll();selBloque=bloqueDeHoy();show("app");renderAll();}catch(e){showErr(e.message);}
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
