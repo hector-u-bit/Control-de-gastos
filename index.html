@@ -163,7 +163,7 @@ select.fi option{background:#1a1a26;}
 
 /* ── FAB ── */
 .fab{
-  position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));right:20px;
+  position:fixed;bottom:calc(104px + env(safe-area-inset-bottom));right:20px;
   width:56px;height:56px;border-radius:28px;
   background:var(--blue);color:#fff;border:none;
   font-size:26px;line-height:1;cursor:pointer;
@@ -252,6 +252,11 @@ select.fi option{background:#1a1a26;}
 </head>
 <body>
 
+<!-- Truco háptico iOS 17.4+ (invisible, sin efecto si no está soportado) -->
+<input type="checkbox" switch id="ios-haptic"
+  style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;left:-100px;top:-100px"
+  aria-hidden="true" tabindex="-1"/>
+
 <!-- SPLASH -->
 <div id="splash">
   <img src="icon.png" alt="Kash"/>
@@ -277,7 +282,7 @@ select.fi option{background:#1a1a26;}
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;padding-bottom:90px">
+<div id="app" style="display:none;padding-bottom:120px">
 
   <!-- HEADER -->
   <div class="header">
@@ -377,10 +382,18 @@ const mk=()=>`${curYear}-${String(curMonth+1).padStart(2,"0")}`;
 const getC=id=>cats.find(c=>c.id===id)||{label:id,icon:"📦",color:"#636379"};
 
 // ── HÁPTICA ───────────────────────────────────────────────────────────────────
+// Android usa navigator.vibrate. iOS 17.4+ responde al toggle de un <input switch>.
+// Si el dispositivo no soporta ninguno, simplemente no ocurre nada.
+const _swHaptic=()=>{
+  const el=document.getElementById("ios-haptic");
+  if(!el)return;
+  try{el.checked=!el.checked;}catch{}
+};
 function haptic(tipo){
-  if(!navigator.vibrate)return;
   const p={light:8,medium:18,heavy:30,double:[12,50,12]}[tipo]||8;
-  try{navigator.vibrate(p);}catch{}
+  if(navigator.vibrate){try{navigator.vibrate(p);}catch{}}
+  _swHaptic();
+  if(tipo==="double")setTimeout(_swHaptic,60);
 }
 
 // ── CONTADOR ANIMADO ──────────────────────────────────────────────────────────
