@@ -195,6 +195,29 @@ select.fi option{background:#1a1a26;}
 .spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.08);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto;}
 @keyframes sp{to{transform:rotate(360deg)}}
 
+/* ── TOAST FLOTANTE ── */
+.toast{
+  position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(18px);
+  opacity:0;pointer-events:none;z-index:60;
+  display:flex;align-items:center;gap:9px;white-space:nowrap;
+  background:rgba(26,26,38,.82);
+  backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid rgba(255,255,255,.13);border-radius:100px;
+  padding:11px 20px;font-size:14px;font-weight:600;color:var(--text);
+  box-shadow:0 8px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);
+  transition:opacity .3s cubic-bezier(.3,1,.5,1),transform .38s cubic-bezier(.34,1.4,.5,1);
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast .tspin{width:15px;height:15px;border:2px solid rgba(255,255,255,.18);
+ border-top-color:var(--blue);border-radius:50%;animation:tsp .7s linear infinite;flex-shrink:0}
+@keyframes tsp{to{transform:rotate(360deg)}}
+.toast .chk{width:17px;height:17px;flex-shrink:0}
+.toast .chk circle{stroke-dasharray:52;stroke-dashoffset:52;animation:tdc .4s ease .05s forwards}
+.toast .chk path{stroke-dasharray:20;stroke-dashoffset:20;animation:tdp .3s ease .3s forwards}
+@keyframes tdc{to{stroke-dashoffset:0}}
+@keyframes tdp{to{stroke-dashoffset:0}}
+
 /* ── HÉROE ── */
 .hero-card{background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
  border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:14px}
@@ -237,6 +260,19 @@ select.fi option{background:#1a1a26;}
 .dayhdr{display:flex;justify-content:space-between;align-items:baseline;padding:10px 4px 6px}
 .dayhdr b{font-size:12px;color:var(--text2);font-weight:600}
 .dayhdr span{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);font-weight:600}
+
+/* ── REORDENAR CATEGORÍAS ── */
+.cat-list{display:grid;gap:10px;position:relative}
+.cat-row{display:flex;align-items:center;gap:12px;padding:14px 12px 14px 16px;
+ will-change:transform;transition:transform .25s cubic-bezier(.32,1,.5,1),box-shadow .2s,opacity .2s}
+.cat-row.dragging{z-index:20;box-shadow:0 12px 32px rgba(0,0,0,.55);
+ transition:box-shadow .2s;opacity:.97;position:relative}
+.cat-row.settling{transition:transform .25s cubic-bezier(.32,1,.5,1)}
+.grip{width:34px;height:44px;display:flex;align-items:center;justify-content:center;
+ flex-shrink:0;cursor:grab;color:var(--text3);font-size:17px;letter-spacing:-1px;
+ touch-action:none;border-radius:10px;transition:background .2s,color .2s;user-select:none;-webkit-user-select:none}
+.grip:active{background:rgba(255,255,255,.07);color:var(--blue)}
+.reorder-hint{font-size:12px;color:var(--text3);text-align:center;padding:14px 8px 2px;line-height:1.5}
 
 /* ── SWIPE ── */
 .sw-row{position:relative;overflow:hidden;border-radius:18px;margin-bottom:10px}
@@ -343,7 +379,6 @@ select.fi option{background:#1a1a26;}
         <div style="font-size:22px;font-weight:700;letter-spacing:-.5px">Presupuesto</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
-        <div id="save-st" style="display:none"></div>
         <button onclick="prevMonth()" style="background:rgba(255,255,255,.08);border:none;color:var(--text2);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">‹</button>
         <div id="month-lbl" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;min-width:110px;text-align:center"></div>
         <button onclick="nextMonth()" style="background:rgba(255,255,255,.08);border:none;color:var(--text2);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">›</button>
@@ -379,6 +414,9 @@ select.fi option{background:#1a1a26;}
 
 <!-- FAB -->
 <button class="fab" id="fab-btn" onclick="openExpModal()" title="Agregar gasto">+</button>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
@@ -525,7 +563,8 @@ async function loadAll(){
     await sbUpsert("categorias",DEF_CATS.map((c,i)=>({id:c.id,label:c.label,icon:c.icon,color:c.color,orden:i})));
     cr=await sbGet("categorias","?order=orden");
   }
-  cats=cr.map(r=>({id:r.id,label:r.label,icon:r.icon,color:r.color,orden:r.orden??999}));
+  cats=cr.map((r,i)=>({id:r.id,label:r.label,icon:r.icon,color:r.color,orden:(r.orden==null?900+i:r.orden)}))
+         .sort((a,b)=>a.orden-b.orden);
   buds={};br.forEach(r=>{buds[r.categoria_id]=Number(r.monto);});
   exps=er.map(r=>({id:r.id,category:r.categoria_id,amount:Number(r.monto),description:r.descripcion||"",date:r.fecha||""}));
 }
@@ -537,13 +576,22 @@ async function delExp(id){await sbDelete("gastos",`?id=eq.${id}`);}
 
 // ── STATUS ────────────────────────────────────────────────────────────────────
 let stT;
+const _CHK=`<svg class="chk" viewBox="0 0 24 24" fill="none">
+  <circle cx="12" cy="12" r="9.5" stroke="#34d17a" stroke-width="2.2"/>
+  <path d="M7.6 12.4l3 3 5.8-6.2" stroke="#34d17a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 function showSt(t){
-  const el=document.getElementById("save-st");
-  el.style.display="inline-flex";
-  el.className="save-pill";
-  const m={saving:["⏳ guardando","rgba(255,255,255,.1)","#888"],saved:["✓ guardado","rgba(52,209,122,.15)","#34d17a"],error:["⚠ error","rgba(255,95,87,.15)","#ff5f57"]};
-  el.textContent=m[t][0];el.style.background=m[t][1];el.style.color=m[t][2];
-  clearTimeout(stT);if(t!=="saving")stT=setTimeout(()=>{el.style.display="none";},2500);
+  const el=document.getElementById("toast");
+  if(!el)return;
+  clearTimeout(stT);
+  if(t==="saving"){
+    el.innerHTML=`<div class="tspin"></div><span>Guardando…</span>`;
+  }else if(t==="saved"){
+    el.innerHTML=`${_CHK}<span>Guardado</span>`;
+  }else{
+    el.innerHTML=`<span style="color:#ff8b85">⚠</span><span style="color:#ffb3ae">No se pudo guardar</span>`;
+  }
+  requestAnimationFrame(()=>el.classList.add("on"));
+  if(t!=="saving")stT=setTimeout(()=>el.classList.remove("on"),t==="error"?2800:1900);
 }
 
 // ── SCREENS ───────────────────────────────────────────────────────────────────
@@ -822,11 +870,12 @@ function renderCats(){
   let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
     <div style="font-size:14px;color:var(--text2);font-weight:500">${cats.length} categorías</div>
     <button class="bp" style="padding:10px 16px;font-size:13px" onclick="openNewCat()">+ Nueva</button>
-  </div><div style="display:grid;gap:10px">`;
+  </div><div class="cat-list" id="cat-list">`;
   cats.forEach(cat=>{
     const isDef=DEF_CATS.some(d=>d.id===cat.id),sp=s[cat.id]||0,bud=Number(buds[cat.id]||0);
-    h+=`<div class="card" style="padding:14px 16px;display:flex;align-items:center;gap:14px">
-      <div style="width:44px;height:44px;border-radius:14px;background:${cat.color}18;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:1px solid ${cat.color}30">${cat.icon}</div>
+    h+=`<div class="card cat-row" data-id="${cat.id}">
+      <div class="grip">⠿</div>
+      <div style="width:42px;height:42px;border-radius:13px;background:${cat.color}18;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;border:1px solid ${cat.color}30">${cat.icon}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
           <span style="font-weight:600;font-size:15px">${cat.label}</span>
@@ -837,8 +886,125 @@ function renderCats(){
       <button class="bg" style="padding:8px 12px;font-size:13px;flex-shrink:0" onclick="openEditCat('${cat.id}')">✏️</button>
     </div>`;
   });
+  h+=`</div><div class="reorder-hint">Mantén presionado ⠿ y arrastra para reordenar</div>`;
   const el=document.getElementById("tab-categories");
-  el.innerHTML=h+"</div>";el.className="fade-in";
+  el.innerHTML=h;el.className="fade-in";
+  activarReorden();
+}
+
+// ── ARRASTRAR PARA REORDENAR ──────────────────────────────────────────────────
+function activarReorden(){
+  const cont=document.getElementById("cat-list");
+  if(!cont)return;
+  const filas=[...cont.querySelectorAll(".cat-row")];
+  if(filas.length<2)return;
+
+  filas.forEach(fila=>{
+    const grip=fila.querySelector(".grip");
+    if(!grip)return;
+
+    let p0=0, lastY=0, dy=0, alturas=[], desde=0, hacia=0;
+    let activo=false, raf=null, vel=0;
+    const BORDE=110, VMAX=16;
+
+    const aplicar=()=>{
+      // coordenada de documento: inmune a la deriva del scroll
+      dy=(lastY+window.scrollY)-p0;
+      fila.style.transform=`translateY(${dy}px) scale(1.02)`;
+      let nuevo=desde;
+      if(dy>0){
+        let acc=0;
+        for(let i=desde+1;i<filas.length;i++){acc+=alturas[i];if(dy>acc-alturas[i]/2)nuevo=i;else break;}
+      }else if(dy<0){
+        let acc=0;
+        for(let i=desde-1;i>=0;i--){acc+=alturas[i];if(-dy>acc-alturas[i]/2)nuevo=i;else break;}
+      }
+      if(nuevo!==hacia){haptic("light");hacia=nuevo;}
+      filas.forEach((f,i)=>{
+        if(f===fila)return;
+        let t=0;
+        if(hacia>desde&&i>desde&&i<=hacia)t=-alturas[desde];
+        if(hacia<desde&&i<desde&&i>=hacia)t=alturas[desde];
+        f.style.transform=`translateY(${t}px)`;
+      });
+    };
+
+    const loop=()=>{
+      if(!activo){raf=null;return;}
+      if(vel!==0){
+        const antes=window.scrollY;
+        window.scrollBy(0,vel);
+        if(window.scrollY!==antes)aplicar();
+      }
+      raf=requestAnimationFrame(loop);
+    };
+
+    const calcVel=cy=>{
+      const alto=window.innerHeight;
+      if(cy<BORDE){
+        const f=(BORDE-cy)/BORDE;
+        vel=-Math.ceil(f*f*VMAX);
+      }else if(cy>alto-BORDE){
+        const f=(cy-(alto-BORDE))/BORDE;
+        vel=Math.ceil(f*f*VMAX);
+      }else vel=0;
+    };
+
+    const empezar=ev=>{
+      ev.preventDefault();
+      activo=true;desde=filas.indexOf(fila);hacia=desde;
+      lastY=(ev.touches?ev.touches[0]:ev).clientY;
+      p0=lastY+window.scrollY;
+      alturas=filas.map(f=>f.getBoundingClientRect().height+10);
+      filas.forEach(f=>{f.style.transition="transform .22s cubic-bezier(.32,1,.5,1)";f.style.transform="translateY(0)";});
+      fila.classList.add("dragging");
+      fila.style.transition="box-shadow .2s";
+      document.body.style.overflowAnchor="none";
+      haptic("medium");
+      if(!raf)raf=requestAnimationFrame(loop);
+    };
+
+    const mover=ev=>{
+      if(!activo)return;
+      ev.preventDefault();
+      lastY=(ev.touches?ev.touches[0]:ev).clientY;
+      calcVel(lastY);
+      aplicar();
+    };
+
+    const soltar=async()=>{
+      if(!activo)return;
+      activo=false;vel=0;
+      if(raf){cancelAnimationFrame(raf);raf=null;}
+      document.body.style.overflowAnchor="";
+      fila.classList.remove("dragging");
+      filas.forEach(f=>{f.style.transition="";f.style.transform="";});
+      if(hacia===desde)return;
+      haptic("medium");
+      const arr=[...cats];
+      const [m]=arr.splice(desde,1);
+      arr.splice(hacia,0,m);
+      cats=arr.map((c,i)=>({...c,orden:i}));
+      renderCats();
+      showSt("saving");
+      try{
+        await sbUpsert("categorias",cats.map((c,i)=>({id:c.id,label:c.label,icon:c.icon,color:c.color,orden:i})));
+        showSt("saved");
+      }catch(e){showSt("error");}
+    };
+
+    grip.addEventListener("touchstart",empezar,{passive:false});
+    grip.addEventListener("touchmove",mover,{passive:false});
+    grip.addEventListener("touchend",soltar);
+    grip.addEventListener("touchcancel",soltar);
+    grip.addEventListener("mousedown",e=>{
+      empezar(e);
+      const mm=ev=>mover(ev);
+      const mu=()=>{soltar();document.removeEventListener("mousemove",mm);document.removeEventListener("mouseup",mu);};
+      document.addEventListener("mousemove",mm);
+      document.addEventListener("mouseup",mu);
+    });
+  });
 }
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
@@ -998,7 +1164,7 @@ async function saveCatM(){
   const label=document.getElementById("c-name").value.trim();if(!label)return;
   const id=editCatId||`c${Date.now()}`;
   const prev=cats.find(c=>c.id===editCatId);
-  const cat={id,label,icon:window._ci,color:window._cc,orden:prev?prev.orden:cats.length};
+  const cat={id,label,icon:window._ci,color:window._cc,orden:prev?prev.orden:(cats.length?Math.max(...cats.map(c=>c.orden??0))+1:0)};
   haptic("medium");
   if(editCatId)cats=cats.map(c=>c.id===editCatId?cat:c);else cats=[...cats,cat];
   closeModForce();renderAll();showSt("saving");
