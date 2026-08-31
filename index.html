@@ -118,21 +118,27 @@ select.fi option{background:#1a1a26;}
 
 /* ── TABS (bottom nav style) ── */
 .bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;
-  background:rgba(10,10,15,.85);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-top:1px solid var(--border);
+  position:fixed;
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  left:14px;right:14px;
+  max-width:452px;margin:0 auto;
+  background:rgba(24,24,34,.72);
+  backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:24px;
   display:flex;align-items:center;
-  padding:8px 16px calc(8px + env(safe-area-inset-bottom));
-  z-index:50;gap:4px;
+  padding:7px 6px;
+  z-index:50;gap:3px;
+  box-shadow:0 10px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);
 }
 .nav-item{
-  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:6px 4px;border:none;background:none;cursor:pointer;
-  font-family:inherit;color:var(--text3);font-size:10px;font-weight:500;
-  transition:color .2s;border-radius:12px;
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:7px 4px;border:none;background:none;cursor:pointer;
+  font-family:inherit;color:var(--text3);font-size:10px;font-weight:600;
+  transition:color .22s,background .22s;border-radius:17px;
 }
-.nav-item.on{color:var(--blue);}
+.nav-item.on{color:var(--blue);background:rgba(79,142,247,.14);}
+.nav-item:active{transform:scale(.95);}
 .nav-item .nav-icon{font-size:22px;line-height:1;transition:transform .2s;}
 .nav-item.on .nav-icon{transform:scale(1.1);}
 .nav-item span{letter-spacing:.01em;}
@@ -163,7 +169,7 @@ select.fi option{background:#1a1a26;}
 
 /* ── FAB ── */
 .fab{
-  position:fixed;bottom:calc(104px + env(safe-area-inset-bottom));right:20px;
+  position:fixed;bottom:calc(92px + env(safe-area-inset-bottom));right:18px;
   width:56px;height:56px;border-radius:28px;
   background:var(--blue);color:#fff;border:none;
   font-size:26px;line-height:1;cursor:pointer;
@@ -197,7 +203,7 @@ select.fi option{background:#1a1a26;}
 
 /* ── TOAST FLOTANTE ── */
 .toast{
-  position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));
+  position:fixed;left:50%;bottom:calc(158px + env(safe-area-inset-bottom));
   transform:translateX(-50%) translateY(18px);
   opacity:0;pointer-events:none;z-index:60;
   display:flex;align-items:center;gap:9px;white-space:nowrap;
@@ -436,7 +442,7 @@ select.fi option{background:#1a1a26;}
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;padding-bottom:120px">
+<div id="app" style="display:none;padding-bottom:calc(112px + env(safe-area-inset-bottom))">
 
   <!-- HEADER -->
   <div class="header" id="header">
