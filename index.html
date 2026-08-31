@@ -218,6 +218,25 @@ select.fi option{background:#1a1a26;}
 @keyframes tdc{to{stroke-dashoffset:0}}
 @keyframes tdp{to{stroke-dashoffset:0}}
 
+/* ── COMPARACIÓN MENSUAL ── */
+.cmp-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+ padding:4px 10px;border-radius:20px;margin-top:10px}
+.cmp-pill.up{background:rgba(255,95,87,.13);color:#ff8b85}
+.cmp-pill.dn{background:rgba(52,209,122,.13);color:#7ff0b0}
+.cmp-pill.eq{background:rgba(255,255,255,.06);color:var(--text2)}
+
+/* ── GASTOS FRECUENTES ── */
+.qa-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:10px}
+.qa{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.qa::-webkit-scrollbar{display:none}
+.qa-item{flex-shrink:0;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;
+ padding:10px 13px;cursor:pointer;transition:all .18s;min-width:112px}
+.qa-item:active{transform:scale(.95);background:rgba(79,142,247,.14);border-color:var(--blue)}
+.qa-top{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.qa-nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qa-am{font-family:'DM Mono',monospace;font-size:13px;font-weight:700}
+.toast .sep{width:1px;height:15px;background:rgba(255,255,255,.15);margin:0 2px;flex-shrink:0}
+
 /* ── HÉROE ── */
 .hero-card{background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
  border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:14px}
@@ -390,6 +409,7 @@ select.fi option{background:#1a1a26;}
       <div class="hero-lbl">Disponible este mes</div>
       <div id="s-lft" class="hero-num">$0</div>
       <div id="s-lft-sub" class="hero-sub">Libre para gastar</div>
+      <div id="s-cmp" style="display:none"></div>
       <div class="pb" style="margin-top:16px"><div class="pf" id="g-bar" style="width:0%;background:var(--blue)"></div></div>
       <div class="hero-foot">
         <div>
@@ -461,6 +481,7 @@ const COLORS=["#4f8ef7","#ffb340","#34d17a","#ff5f57","#bf5af2","#32d2d2","#ff9f
 
 let curMonth=new Date().getMonth(), curYear=new Date().getFullYear();
 let cats=[...DEF_CATS], buds={}, exps=[];
+let gastoMesAnterior=null, frecuentes=[];
 let editExpId=null, editCatId=null, editBudId=null;
 
 const fmt=n=>`$${Number(n).toLocaleString("es-CL")}`;
@@ -468,6 +489,33 @@ const fmtI=r=>{const d=String(r).replace(/\D/g,"");return d?Number(d).toLocaleSt
 const parseI=v=>String(v).replace(/\./g,"");
 const mk=()=>`${curYear}-${String(curMonth+1).padStart(2,"0")}`;
 const getC=id=>cats.find(c=>c.id===id)||{label:id,icon:"📦",color:"#636379"};
+
+// ── AVISO DE LÍMITE DE CATEGORÍA ──────────────────────────────────────────────
+function avisoCategoria(catId){
+  const bud=Number(buds[catId]||0);
+  if(bud<=0)return "";
+  const gastado=exps.filter(e=>e.category===catId).reduce((a,e)=>a+e.amount,0);
+  const pct=Math.round(gastado/bud*100);
+  const c=getC(catId);
+  if(pct>100)return `<span class="sep"></span><span style="color:#ff8b85">${c.icon} excedido</span>`;
+  if(pct>=85) return `<span class="sep"></span><span style="color:#ffc978">${c.icon} ${pct}%</span>`;
+  return "";
+}
+
+// ── COMPARACIÓN CON EL MES ANTERIOR ───────────────────────────────────────────
+function pintarComparacion(gastoActual){
+  const el=document.getElementById("s-cmp");
+  if(!el)return;
+  const prev=new Date(curYear,curMonth-1,1);
+  const nombrePrev=MONTHS[prev.getMonth()].toLowerCase();
+  if(gastoMesAnterior===null||gastoMesAnterior<=0||gastoActual<=0){el.style.display="none";return;}
+  const dif=((gastoActual-gastoMesAnterior)/gastoMesAnterior)*100;
+  const abs=Math.abs(Math.round(dif));
+  el.style.display="inline-flex";
+  if(abs<5){el.className="cmp-pill eq";el.textContent=`≈ Similar a ${nombrePrev}`;}
+  else if(dif>0){el.className="cmp-pill up";el.textContent=`↑ ${abs}% más que ${nombrePrev}`;}
+  else{el.className="cmp-pill dn";el.textContent=`↓ ${abs}% menos que ${nombrePrev}`;}
+}
 
 // ── SUBTÍTULO DEL HÉROE ───────────────────────────────────────────────────────
 function diasDelMes(y,m){return new Date(y,m+1,0).getDate();}
@@ -567,6 +615,38 @@ async function loadAll(){
          .sort((a,b)=>a.orden-b.orden);
   buds={};br.forEach(r=>{buds[r.categoria_id]=Number(r.monto);});
   exps=er.map(r=>({id:r.id,category:r.categoria_id,amount:Number(r.monto),description:r.descripcion||"",date:r.fecha||""}));
+
+  // mes anterior (para comparar) y frecuentes (últimos 3 meses)
+  const prev=new Date(curYear,curMonth-1,1);
+  const mPrev=`${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,"0")}`;
+  const m3=new Date(curYear,curMonth-3,1);
+  const desde=`${m3.getFullYear()}-${String(m3.getMonth()+1).padStart(2,"0")}`;
+  try{
+    const hist=await sbGet("gastos",`?mes=gte.${desde}&mes=lt.${m}`);
+    gastoMesAnterior=hist.filter(r=>r.mes===mPrev).reduce((a,r)=>a+Number(r.monto),0);
+    if(!hist.some(r=>r.mes===mPrev))gastoMesAnterior=null;
+    frecuentes=calcFrecuentes(hist);
+  }catch{gastoMesAnterior=null;frecuentes=[];}
+}
+
+// ── GASTOS FRECUENTES ──
+function calcFrecuentes(hist){
+  const mapa={};
+  hist.forEach(r=>{
+    const desc=(r.descripcion||"").trim();
+    if(!desc)return;
+    const k=desc.toLowerCase()+"|"+r.categoria_id;
+    if(!mapa[k])mapa[k]={desc,cat:r.categoria_id,montos:[],meses:new Set()};
+    mapa[k].montos.push(Number(r.monto));
+    mapa[k].meses.add(r.mes);
+  });
+  return Object.values(mapa)
+    .filter(f=>f.meses.size>=2)                       // aparece en 2+ meses distintos
+    .map(f=>({desc:f.desc,cat:f.cat,
+      monto:Math.round(f.montos.slice(-1)[0]),        // el más reciente
+      veces:f.meses.size}))
+    .sort((a,b)=>b.veces-a.veces||b.monto-a.monto)
+    .slice(0,6);
 }
 async function saveCat(c){await sbUpsert("categorias",{id:c.id,label:c.label,icon:c.icon,color:c.color,orden:c.orden??cats.length});}
 async function delCat(id){await sbDelete("categorias",`?id=eq.${id}`);}
@@ -579,19 +659,19 @@ let stT;
 const _CHK=`<svg class="chk" viewBox="0 0 24 24" fill="none">
   <circle cx="12" cy="12" r="9.5" stroke="#34d17a" stroke-width="2.2"/>
   <path d="M7.6 12.4l3 3 5.8-6.2" stroke="#34d17a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-function showSt(t){
+function showSt(t,extra){
   const el=document.getElementById("toast");
   if(!el)return;
   clearTimeout(stT);
   if(t==="saving"){
     el.innerHTML=`<div class="tspin"></div><span>Guardando…</span>`;
   }else if(t==="saved"){
-    el.innerHTML=`${_CHK}<span>Guardado</span>`;
+    el.innerHTML=`${_CHK}<span>Guardado</span>`+(extra||"");
   }else{
     el.innerHTML=`<span style="color:#ff8b85">⚠</span><span style="color:#ffb3ae">No se pudo guardar</span>`;
   }
   requestAnimationFrame(()=>el.classList.add("on"));
-  if(t!=="saving")stT=setTimeout(()=>el.classList.remove("on"),t==="error"?2800:1900);
+  if(t!=="saving")stT=setTimeout(()=>el.classList.remove("on"),t==="error"?2800:(extra?2600:1900));
 }
 
 // ── SCREENS ───────────────────────────────────────────────────────────────────
@@ -622,6 +702,7 @@ function renderAll(){
   countTo(document.getElementById("s-lft"),Math.abs(tl));
   document.getElementById("s-lft").style.color=tl<0?"var(--red)":"var(--green)";
   document.getElementById("s-lft-sub").innerHTML=subtituloHeroe(tb,ts,tl);
+  pintarComparacion(ts);
   const bar=document.getElementById("g-bar");
   bar.style.width=`${Math.min(pct,100)}%`;
   bar.style.background=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--blue)";
@@ -1081,7 +1162,18 @@ async function removeBud(){
 // ── EXPENSE ───────────────────────────────────────────────────────────────────
 function expFrm(exp){
   const today=new Date().toISOString().split("T")[0];
-  return `<div style="display:grid;gap:16px">
+  let quick="";
+  if(!exp&&frecuentes.length){
+    quick=`<div style="margin-bottom:18px">
+      <div class="qa-title">⚡ Frecuentes · toca para autocompletar</div>
+      <div class="qa">${frecuentes.map((f,i)=>{
+        const c=getC(f.cat);
+        return `<div class="qa-item" onclick="usarFrecuente(${i})">
+          <div class="qa-top"><span style="font-size:16px">${c.icon}</span><span class="qa-nm">${f.desc}</span></div>
+          <div class="qa-am" style="color:${c.color}">${fmt(f.monto)}</div></div>`;
+      }).join("")}</div></div>`;
+  }
+  return quick+`<div style="display:grid;gap:16px">
     <div><label class="fl">Categoría</label>
       <select class="fi fit" id="e-cat">${cats.map(c=>`<option value="${c.id}"${exp&&c.id===exp.category?" selected":""}>${c.icon} ${c.label}</option>`).join("")}</select>
     </div>
@@ -1097,6 +1189,17 @@ function expFrm(exp){
     </div>
   </div>`;
 }
+function usarFrecuente(i){
+  const f=frecuentes[i];if(!f)return;
+  haptic("medium");
+  const amt=document.getElementById("e-amt");
+  const desc=document.getElementById("e-desc");
+  const cat=document.getElementById("e-cat");
+  if(amt)amt.value=fmtI(String(f.monto));
+  if(desc)desc.value=f.desc;
+  if(cat&&cats.some(c=>c.id===f.cat))cat.value=f.cat;
+}
+
 function openExpModal(){
   editExpId=null;
   openMod(`<div style="font-weight:700;font-size:20px;margin-bottom:22px">Nuevo gasto</div>${expFrm(null)}
@@ -1121,7 +1224,12 @@ async function saveExpM(){
   haptic("medium");
   if(editExpId)exps=exps.map(e=>e.id==editExpId?exp:e);else exps=[exp,...exps];
   closeModForce();renderAll();showSt("saving");
-  try{await saveExp(exp);showSt("saved");}catch(e){showSt("error");}
+  try{
+    await saveExp(exp);
+    const aviso=avisoCategoria(exp.category);
+    if(aviso)haptic("double");
+    showSt("saved",aviso);
+  }catch(e){showSt("error");}
 }
 async function delExpM(id){
   haptic("double");exps=exps.filter(e=>e.id!=id);closeModForce();renderAll();showSt("saving");
