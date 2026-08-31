@@ -218,6 +218,37 @@ select.fi option{background:#1a1a26;}
 @keyframes tdc{to{stroke-dashoffset:0}}
 @keyframes tdp{to{stroke-dashoffset:0}}
 
+/* ── HEADER CONTRAÍBLE ── */
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;transition:margin .3s}
+.header.small .hdr-top{margin-bottom:10px}
+.hdr-kick{font-size:11px;color:var(--blue);letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+ margin-bottom:3px;max-height:16px;opacity:1;overflow:hidden;
+ transition:max-height .3s,opacity .25s,margin-bottom .3s}
+.header.small .hdr-kick{max-height:0;opacity:0;margin-bottom:0}
+.hdr-ttl{font-size:22px;font-weight:700;letter-spacing:-.5px;transition:font-size .3s}
+.header.small .hdr-ttl{font-size:17px}
+.hero-wrap{overflow:hidden;max-height:340px;opacity:1;
+ transition:max-height .38s cubic-bezier(.32,1,.5,1),opacity .26s}
+.header.small .hero-wrap{max-height:0;opacity:0}
+.mini-sum{display:flex;align-items:center;gap:12px;max-height:0;opacity:0;overflow:hidden;
+ transition:max-height .38s cubic-bezier(.32,1,.5,1),opacity .26s .06s}
+.header.small .mini-sum{max-height:44px;opacity:1}
+.mini-l{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.mini-v{font-family:'DM Mono',monospace;font-weight:700;font-size:17px;color:var(--green);white-space:nowrap}
+.mini-bar{flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:5px;overflow:hidden;min-width:40px}
+.mini-bf{height:100%;border-radius:5px;background:var(--blue);transition:width .6s cubic-bezier(.4,0,.2,1)}
+
+/* ── SKELETON ── */
+@keyframes shim{0%{background-position:-360px 0}100%{background-position:360px 0}}
+.sk{background:linear-gradient(90deg,rgba(255,255,255,.045) 25%,rgba(255,255,255,.11) 50%,rgba(255,255,255,.045) 75%);
+ background-size:720px 100%;animation:shim 1.4s infinite linear;border-radius:8px}
+.sk-c{width:44px;height:44px;border-radius:14px;flex-shrink:0}
+.sk-hero{padding:20px;border:1px solid var(--border);border-radius:20px;margin-bottom:16px;
+ background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02))}
+.sk-row{padding:14px 16px;display:flex;align-items:center;gap:13px;margin-bottom:10px;
+ background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+ border:1px solid var(--border);border-radius:18px}
+
 /* ── COMPARACIÓN MENSUAL ── */
 .cmp-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
  padding:4px 10px;border-radius:20px;margin-top:10px}
@@ -374,9 +405,26 @@ select.fi option{background:#1a1a26;}
 </div>
 
 <!-- LOADING -->
-<div id="s-loading" class="screen" style="display:flex">
-  <div class="spin"></div>
-  <div style="font-size:15px;color:var(--text2)" id="loading-msg">Conectando…</div>
+<div id="s-loading" style="display:block;padding:calc(16px + env(safe-area-inset-top)) 16px 40px">
+  <div style="margin-bottom:16px">
+    <div class="sk" style="width:120px;height:9px;margin-bottom:9px"></div>
+    <div class="sk" style="width:150px;height:20px;border-radius:7px"></div>
+  </div>
+  <div class="sk-hero">
+    <div class="sk" style="width:40%;height:9px;margin-bottom:14px"></div>
+    <div class="sk" style="width:64%;height:34px;border-radius:10px;margin-bottom:12px"></div>
+    <div class="sk" style="width:52%;height:11px;margin-bottom:16px"></div>
+    <div class="sk" style="width:100%;height:6px;border-radius:6px;margin-bottom:16px"></div>
+    <div style="display:flex;gap:18px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="flex:1"><div class="sk" style="width:62%;height:8px;margin-bottom:7px"></div><div class="sk" style="width:88%;height:15px"></div></div>
+      <div style="flex:1"><div class="sk" style="width:62%;height:8px;margin-bottom:7px"></div><div class="sk" style="width:88%;height:15px"></div></div>
+    </div>
+  </div>
+  <div class="sk-row" style="opacity:1"><div class="sk sk-c"></div><div style="flex:1;min-width:0"><div class="sk" style="width:74%;height:11px;margin-bottom:8px"></div><div class="sk" style="width:52%;height:9px"></div></div><div class="sk" style="width:54px;height:15px"></div></div>
+  <div class="sk-row" style="opacity:0.88"><div class="sk sk-c"></div><div style="flex:1;min-width:0"><div class="sk" style="width:60%;height:11px;margin-bottom:8px"></div><div class="sk" style="width:44%;height:9px"></div></div><div class="sk" style="width:54px;height:15px"></div></div>
+  <div class="sk-row" style="opacity:0.74"><div class="sk sk-c"></div><div style="flex:1;min-width:0"><div class="sk" style="width:80%;height:11px;margin-bottom:8px"></div><div class="sk" style="width:56%;height:9px"></div></div><div class="sk" style="width:54px;height:15px"></div></div>
+  <div class="sk-row" style="opacity:0.58"><div class="sk sk-c"></div><div style="flex:1;min-width:0"><div class="sk" style="width:56%;height:11px;margin-bottom:8px"></div><div class="sk" style="width:40%;height:9px"></div></div><div class="sk" style="width:54px;height:15px"></div></div>
+  <div class="sk-row" style="opacity:0.4"><div class="sk sk-c"></div><div style="flex:1;min-width:0"><div class="sk" style="width:68%;height:11px;margin-bottom:8px"></div><div class="sk" style="width:48%;height:9px"></div></div><div class="sk" style="width:54px;height:15px"></div></div>
 </div>
 
 <!-- ERROR -->
@@ -391,11 +439,11 @@ select.fi option{background:#1a1a26;}
 <div id="app" style="display:none;padding-bottom:120px">
 
   <!-- HEADER -->
-  <div class="header">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+  <div class="header" id="header">
+    <div class="hdr-top">
       <div>
-        <div style="font-size:11px;color:var(--blue);letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:3px">Control Financiero</div>
-        <div style="font-size:22px;font-weight:700;letter-spacing:-.5px">Presupuesto</div>
+        <div class="hdr-kick">Control Financiero</div>
+        <div class="hdr-ttl">Presupuesto</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         <button onclick="prevMonth()" style="background:rgba(255,255,255,.08);border:none;color:var(--text2);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">‹</button>
@@ -405,6 +453,7 @@ select.fi option{background:#1a1a26;}
     </div>
 
     <!-- HÉROE -->
+    <div class="hero-wrap" id="hero-wrap">
     <div class="hero-card">
       <div class="hero-lbl">Disponible este mes</div>
       <div id="s-lft" class="hero-num">$0</div>
@@ -421,6 +470,16 @@ select.fi option{background:#1a1a26;}
           <div id="s-spt" class="hf-v" style="color:var(--amber)">$0</div>
         </div>
       </div>
+    </div>
+    </div>
+
+    <!-- MINI RESUMEN (aparece al scrollear) -->
+    <div class="mini-sum" id="mini-sum">
+      <div style="min-width:0">
+        <div class="mini-l">Disponible</div>
+        <div class="mini-v" id="mini-val">$0</div>
+      </div>
+      <div class="mini-bar"><div class="mini-bf" id="mini-bf" style="width:0%"></div></div>
     </div>
   </div>
 
@@ -674,11 +733,25 @@ function showSt(t,extra){
   if(t!=="saving")stT=setTimeout(()=>el.classList.remove("on"),t==="error"?2800:(extra?2600:1900));
 }
 
+// ── HEADER CONTRAÍBLE ─────────────────────────────────────────────────────────
+function initHeaderScroll(){
+  const hdr=document.getElementById("header");
+  if(!hdr)return;
+  let chico=false;
+  const onScroll=()=>{
+    const y=window.scrollY;
+    if(!chico&&y>70){chico=true;hdr.classList.add("small");}
+    else if(chico&&y<34){chico=false;hdr.classList.remove("small");}
+  };
+  window.addEventListener("scroll",onScroll,{passive:true});
+  onScroll();
+}
+
 // ── SCREENS ───────────────────────────────────────────────────────────────────
 function show(id){
   ["s-loading","s-error","app"].forEach(s=>{
     const el=document.getElementById(s);
-    el.style.display=s===id?(s==="app"?"block":"flex"):"none";
+    el.style.display=s===id?(s==="s-error"?"flex":"block"):"none";
   });
   const fab=document.getElementById("fab-btn");
   if(fab)fab.style.display=id==="app"?"flex":"none";
@@ -703,6 +776,14 @@ function renderAll(){
   document.getElementById("s-lft").style.color=tl<0?"var(--red)":"var(--green)";
   document.getElementById("s-lft-sub").innerHTML=subtituloHeroe(tb,ts,tl);
   pintarComparacion(ts);
+  const mv=document.getElementById("mini-val");
+  if(mv){
+    mv.textContent=fmt(Math.max(tl,0));
+    mv.style.color=tl<0?"var(--red)":"var(--green)";
+    const mb=document.getElementById("mini-bf");
+    if(mb){mb.style.width=`${Math.min(pct,100)}%`;
+      mb.style.background=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--blue)";}
+  }
   const bar=document.getElementById("g-bar");
   bar.style.width=`${Math.min(pct,100)}%`;
   bar.style.background=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--blue)";
@@ -1091,6 +1172,7 @@ function activarReorden(){
 // ── NAV ───────────────────────────────────────────────────────────────────────
 function setTab(tab,btn){
   haptic("light");
+  window.scrollTo({top:0,behavior:"smooth"});
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.remove("on"));
   btn.classList.add("on");
   ["dashboard","expenses","categories"].forEach(t=>{
@@ -1300,6 +1382,7 @@ async function init(){
     show("app");
     document.querySelector(".nav-item.on").dataset.tab="dashboard";
     renderAll();
+    initHeaderScroll();
   }catch(e){
     showErr(e.message);
   }
