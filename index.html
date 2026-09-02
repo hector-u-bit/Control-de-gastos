@@ -345,7 +345,7 @@ select.fi option{background:#1a1a26;}
 .lrow{display:flex;align-items:center;gap:8px;font-size:12px;opacity:0;transform:translateX(-6px)}
 .lrow.in{animation:lrowIn .45s cubic-bezier(.3,1,.5,1) both}
 @keyframes lrowIn{to{opacity:1;transform:translateX(0)}}
-.ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.ldot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
 .lname{flex:1;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lval{font-family:'DM Mono',monospace;font-weight:600;font-size:11px;flex-shrink:0}
 
@@ -629,25 +629,48 @@ function countTo(el,to,dur=750){
 
 // ── DONA (opción B: crecer con rebote) ────────────────────────────────────────
 const NS_SVG="http://www.w3.org/2000/svg";
+function _aclarar(hex,f){
+  const n=parseInt(String(hex).replace("#",""),16);
+  if(isNaN(n))return hex;
+  const r=Math.min(255,((n>>16)&255)+Math.round(255*f));
+  const g=Math.min(255,((n>>8)&255)+Math.round(255*f));
+  const b=Math.min(255,(n&255)+Math.round(255*f));
+  return `#${((r<<16)|(g<<8)|b).toString(16).padStart(6,"0")}`;
+}
+// formato adaptativo para el centro: reduce y abrevia si no cabe
+function fmtCentro(n){
+  if(n>=10000000)return {t:`$${(n/1000000).toFixed(1).replace(".",",")}M`,s:16};
+  if(n>=1000000) return {t:`$${(n/1000000).toFixed(2).replace(".",",")}M`,s:16};
+  const t=fmt(Math.round(n));
+  return {t,s:t.length>=8?13:t.length>=7?14:16};
+}
 function buildDonut(datos,total){
-  const CX=65,CY=65,R=48,SW=18,CIRC=2*Math.PI*R;
-  let svg=`<svg width="130" height="130" viewBox="0 0 130 130" class="donut-svg" id="donut-svg">`;
-  svg+=`<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="${SW}"/>`;
+  const CX=69,CY=69,R=51,SW=19,CIRC=2*Math.PI*R;
+  let defs=`<defs><filter id="dglow" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="3.2" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  datos.forEach((d,i)=>{
+    defs+=`<linearGradient id="dg${i}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${_aclarar(d.c,.22)}"/>
+      <stop offset="100%" stop-color="${d.c}"/></linearGradient>`;
+  });
+  defs+=`</defs>`;
+  let body=`<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="rgba(255,255,255,.045)" stroke-width="${SW}"/>`;
   let acc=0;
-  datos.forEach(d=>{
+  datos.forEach((d,i)=>{
     const len=CIRC*(d.v/total);
-    svg+=`<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${d.c}" stroke-width="${SW}"
-      stroke-linecap="round" stroke-dasharray="${Math.max(len-3,2).toFixed(1)} ${CIRC.toFixed(1)}"
-      transform="rotate(${(-90+(acc/CIRC)*360).toFixed(2)} ${CX} ${CY})"/>`;
+    body+=`<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="url(#dg${i})" stroke-width="${SW}"
+      stroke-linecap="round" stroke-dasharray="${Math.max(len-4,2).toFixed(1)} ${CIRC.toFixed(1)}"
+      transform="rotate(${(-90+(acc/CIRC)*360).toFixed(2)} ${CX} ${CY})"
+      filter="url(#dglow)" opacity=".95"/>`;
     acc+=len;
   });
-  svg+=`</svg>`;
-  return svg;
+  return `<svg width="138" height="138" viewBox="0 0 138 138" class="donut-svg" id="donut-svg">${defs}${body}</svg>`;
 }
 function animateDonut(){
   const svg=document.getElementById("donut-svg");
   if(!svg)return;
-  svg.style.transformOrigin="65px 65px";
+  svg.style.transformOrigin="50% 50%";
   svg.style.transition="none";
   svg.style.transform="scale(.4) rotate(-45deg)";
   svg.style.opacity="0";
@@ -659,7 +682,19 @@ function animateDonut(){
   const lg=document.getElementById("donut-legend");
   if(lg)requestAnimationFrame(()=>lg.querySelectorAll(".lrow").forEach(r=>r.classList.add("in")));
   const tot=document.getElementById("donut-total");
-  if(tot)countTo(tot,Number(tot.dataset.v||0),800);
+  if(tot){
+    const destino=Number(tot.dataset.v||0);
+    tot.__a=(tot.__a||0)+1;const mio=tot.__a;
+    const t0=performance.now();
+    (function step(now){
+      if(tot.__a!==mio)return;
+      const p=Math.min((now-t0)/850,1),e=1-Math.pow(1-p,3);
+      const r=fmtCentro(destino*e);
+      tot.textContent=r.t;tot.style.fontSize=r.s+"px";
+      if(p<1)requestAnimationFrame(step);
+      else{const f=fmtCentro(destino);tot.textContent=f.t;tot.style.fontSize=f.s+"px";}
+    })(performance.now());
+  }
 }
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
@@ -742,15 +777,36 @@ function showSt(t,extra){
 // ── HEADER CONTRAÍBLE ─────────────────────────────────────────────────────────
 function initHeaderScroll(){
   const hdr=document.getElementById("header");
+  const hero=document.getElementById("hero-wrap");
   if(!hdr)return;
-  let chico=false;
-  const onScroll=()=>{
-    const y=window.scrollY;
-    if(!chico&&y>70){chico=true;hdr.classList.add("small");}
-    else if(chico&&y<34){chico=false;hdr.classList.remove("small");}
+  let chico=false, heroH=0;
+
+  const medir=()=>{
+    if(!chico&&hero&&hero.offsetHeight>0)heroH=hero.offsetHeight;
   };
-  window.addEventListener("scroll",onScroll,{passive:true});
-  onScroll();
+  // solo permitimos contraer si, ya contraído, seguirá habiendo scroll de sobra.
+  // así evitamos el bucle expandir/contraer cuando hay poco contenido.
+  const hayEspacio=()=>{
+    medir();
+    const scrollable=document.documentElement.scrollHeight-window.innerHeight;
+    return scrollable>heroH+80;
+  };
+
+  const evaluar=()=>{
+    const y=window.scrollY;
+    if(!chico){
+      if(y>70&&hayEspacio()){chico=true;hdr.classList.add("small");}
+    }else{
+      // si el contenido ya no da para mantenerlo contraído, lo devolvemos
+      const scrollable=document.documentElement.scrollHeight-window.innerHeight;
+      if(y<34||scrollable<40){chico=false;hdr.classList.remove("small");}
+    }
+  };
+
+  window.addEventListener("scroll",evaluar,{passive:true});
+  window.addEventListener("resize",evaluar);
+  window.__revisarHeader=evaluar;
+  evaluar();
 }
 
 // ── SCREENS ───────────────────────────────────────────────────────────────────
@@ -794,6 +850,7 @@ function renderAll(){
   bar.style.width=`${Math.min(pct,100)}%`;
   bar.style.background=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--blue)";
   const tab=document.querySelector(".nav-item.on")?.dataset.tab||"dashboard";
+  if(window.__revisarHeader)setTimeout(window.__revisarHeader,60);
   if(tab==="dashboard")renderDash();
   else if(tab==="expenses")renderExps();
   else renderCats();
@@ -819,8 +876,9 @@ function renderDash(){
         <div style="position:relative;flex-shrink:0">
           ${buildDonut(top,totalGasto)}
           <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
-            <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:700">Total</div>
-            <div id="donut-total" data-v="${totalGasto}" style="font-family:'DM Mono',monospace;font-weight:700;font-size:15px">$0</div>
+            <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.09em;font-weight:700;margin-bottom:1px">Total</div>
+            <div id="donut-total" data-v="${totalGasto}" style="font-family:'DM Mono',monospace;font-weight:600;font-size:16px;letter-spacing:-.5px;line-height:1.05">$0</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px;font-weight:600">${top.length} categoría${top.length===1?"":"s"}</div>
           </div>
         </div>
         <div class="legend" id="donut-legend">
