@@ -255,6 +255,27 @@ select.fi option{background:#1a1a26;}
  background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
  border:1px solid var(--border);border-radius:18px}
 
+/* ── COPIAR PRESUPUESTOS ── */
+.cp{position:relative;overflow:hidden;border-radius:20px;padding:18px;margin-bottom:14px;
+ background:linear-gradient(135deg,rgba(79,142,247,.16),rgba(79,142,247,.04));border:1px solid rgba(79,142,247,.32);
+ transition:opacity .35s,transform .35s,max-height .4s .1s,margin .4s .1s,padding .4s .1s;max-height:300px}
+.cp.out{opacity:0;transform:scale(.96);max-height:0;margin:0;padding:0 18px;border-width:0}
+.cp-k{font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.1em;font-weight:800;margin-bottom:6px}
+.cp-t{font-size:16px;font-weight:700;margin-bottom:4px}
+.cp-s{font-size:12px;color:var(--text2);line-height:1.5}
+.cp-chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 14px}
+.cp-chip{font-size:11px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text2)}
+.cp-b{display:flex;gap:8px}
+
+/* ── SELECTOR DE ORDEN ── */
+.seg{position:relative;display:flex;background:rgba(255,255,255,.05);border:1px solid var(--border);
+ border-radius:13px;padding:3px;margin-bottom:16px}
+.seg-ind{position:absolute;top:3px;bottom:3px;border-radius:10px;background:rgba(79,142,247,.18);
+ border:1px solid rgba(79,142,247,.45);transition:left .32s cubic-bezier(.32,1.2,.5,1),width .32s cubic-bezier(.32,1.2,.5,1)}
+.seg button{position:relative;z-index:1;flex:1;background:none;border:none;color:var(--text3);
+ font-family:inherit;font-size:12px;font-weight:700;padding:9px 4px;cursor:pointer;transition:color .2s}
+.seg button.on{color:var(--blue)}
+
 /* ── COMPARACIÓN MENSUAL ── */
 .cmp-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
  padding:4px 10px;border-radius:20px;margin-top:10px}
@@ -546,7 +567,7 @@ const COLORS=["#4f8ef7","#ffb340","#34d17a","#ff5f57","#bf5af2","#32d2d2","#ff9f
 
 let curMonth=new Date().getMonth(), curYear=new Date().getFullYear();
 let cats=[...DEF_CATS], buds={}, exps=[];
-let gastoMesAnterior=null, frecuentes=[];
+let gastoMesAnterior=null, frecuentes=[], budsPrev={};
 let editExpId=null, editCatId=null, editBudId=null;
 
 const fmt=n=>`$${Number(n).toLocaleString("es-CL")}`;
@@ -580,6 +601,70 @@ function pintarComparacion(gastoActual){
   if(abs<5){el.className="cmp-pill eq";el.textContent=`≈ Similar a ${nombrePrev}`;}
   else if(dif>0){el.className="cmp-pill up";el.textContent=`↑ ${abs}% más que ${nombrePrev}`;}
   else{el.className="cmp-pill dn";el.textContent=`↓ ${abs}% menos que ${nombrePrev}`;}
+}
+
+// ── COPIAR PRESUPUESTOS DEL MES ANTERIOR ──────────────────────────────────────
+function copiablesPrev(){
+  return Object.entries(budsPrev).filter(([id])=>cats.some(c=>c.id===id));
+}
+function tarjetaCopiar(){
+  if(Object.keys(buds).length)return "";
+  const lista=copiablesPrev();
+  if(!lista.length)return "";
+  try{if(localStorage.getItem("kash-nocopiar-"+mk()))return "";}catch{}
+  const prev=MONTHS[new Date(curYear,curMonth-1,1).getMonth()];
+  const total=lista.reduce((a,[,v])=>a+v,0);
+  return `<div class="cp" id="cp-card">
+    <div class="cp-k">Nuevo mes</div>
+    <div class="cp-t">${MONTHS[curMonth]} aún no tiene presupuestos</div>
+    <div class="cp-s">Copia los de ${prev.toLowerCase()} y después ajustas solo los que cambian.</div>
+    <div class="cp-chips">
+      <span class="cp-chip">${lista.length} categoría${lista.length===1?"":"s"}</span>
+      <span class="cp-chip" style="font-family:'DM Mono',monospace">${fmt(total)}</span>
+    </div>
+    <div class="cp-b">
+      <button class="bg" style="padding:12px 16px" onclick="noCopiar()">Ahora no</button>
+      <button class="bp" style="flex:1;padding:12px" onclick="copiarPresupuestos()">Copiar de ${prev.toLowerCase()}</button>
+    </div>
+  </div>`;
+}
+function ocultarCopiar(){const c=document.getElementById("cp-card");if(c)c.classList.add("out");}
+function noCopiar(){
+  haptic("light");
+  try{localStorage.setItem("kash-nocopiar-"+mk(),"1");}catch{}
+  ocultarCopiar();
+}
+async function copiarPresupuestos(){
+  const lista=copiablesPrev();
+  if(!lista.length)return;
+  haptic("medium");
+  const m=mk();
+  ocultarCopiar();
+  showSt("saving");
+  try{
+    await sbUpsert("presupuestos",lista.map(([id,monto])=>({mes:m,categoria_id:id,monto})));
+    if(mk()!==m)return;
+    lista.forEach(([id,monto])=>{buds[id]=monto;});
+    setTimeout(renderAll,260);
+    showSt("saved",`<span class="sep"></span><span>${lista.length} copiados</span>`);
+  }catch(e){
+    showSt("error");
+    setTimeout(renderAll,260);
+  }
+}
+
+// ── ORDEN DEL DASHBOARD ───────────────────────────────────────────────────────
+let ordenDash="pct";
+try{const o=localStorage.getItem("kash-orden");if(o)ordenDash=o;}catch{}
+function setOrden(m){
+  if(m===ordenDash)return;
+  haptic("light");ordenDash=m;
+  try{localStorage.setItem("kash-orden",m);}catch{}
+  renderDash();
+}
+function moverIndicador(){
+  const b=document.querySelector("#seg-orden button.on"),i=document.getElementById("seg-ind");
+  if(b&&i){i.style.left=b.offsetLeft+"px";i.style.width=b.offsetWidth+"px";}
 }
 
 // ── SUBTÍTULO DEL HÉROE ───────────────────────────────────────────────────────
@@ -722,6 +807,10 @@ async function loadAll(){
   const m3=new Date(curYear,curMonth-3,1);
   const desde=`${m3.getFullYear()}-${String(m3.getMonth()+1).padStart(2,"0")}`;
   try{
+    const bp=await sbGet("presupuestos",`?mes=eq.${mPrev}`);
+    budsPrev={};bp.forEach(r=>{if(Number(r.monto)>0)budsPrev[r.categoria_id]=Number(r.monto);});
+  }catch{budsPrev={};}
+  try{
     const hist=await sbGet("gastos",`?mes=gte.${desde}&mes=lt.${m}`);
     gastoMesAnterior=hist.filter(r=>r.mes===mPrev).reduce((a,r)=>a+Number(r.monto),0);
     if(!hist.some(r=>r.mes===mPrev))gastoMesAnterior=null;
@@ -858,7 +947,7 @@ function renderAll(){
 
 function renderDash(){
   const s={};exps.forEach(e=>{s[e.category]=(s[e.category]||0)+Number(e.amount);});
-  let h="";
+  let h=tarjetaCopiar();
 
   // ── DONA DE DISTRIBUCIÓN ──
   const datos=cats.map(c=>({n:c.label,v:s[c.id]||0,c:c.color})).filter(d=>d.v>0).sort((a,b)=>b.v-a.v);
@@ -892,8 +981,15 @@ function renderDash(){
     </div>`;
   }
 
-  h+='<div style="font-size:13px;color:var(--text2);margin-bottom:16px;font-weight:500">Toca una categoría para editar su presupuesto</div><div style="display:grid;gap:12px">';
-  cats.forEach(cat=>{
+  const modos=[["manual","Mi orden"],["gasto","Mayor gasto"],["pct","% usado"]];
+  h+=`<div class="seg" id="seg-orden"><div class="seg-ind" id="seg-ind"></div>
+    ${modos.map(([k,l])=>`<button class="${ordenDash===k?"on":""}" onclick="setOrden('${k}')">${l}</button>`).join("")}</div>`;
+  h+='<div style="display:grid;gap:12px">';
+  const pctDe=c=>{const b=Number(buds[c.id]||0);return b>0?(s[c.id]||0)/b:-1;};
+  let lista=[...cats];
+  if(ordenDash==="gasto")lista.sort((a,b)=>(s[b.id]||0)-(s[a.id]||0));
+  if(ordenDash==="pct")lista.sort((a,b)=>pctDe(b)-pctDe(a));
+  lista.forEach(cat=>{
     const bud=Number(buds[cat.id]||0),sp=s[cat.id]||0,pct=bud>0?(sp/bud)*100:0,left=bud-sp;
     const bc=pct>100?"var(--red)":pct>80?"var(--amber)":cat.color;
     const r=22,circ=2*Math.PI*r,off=circ*(1-Math.min(pct,100)/100);
@@ -923,6 +1019,7 @@ function renderDash(){
   const el=document.getElementById("tab-dashboard");
   el.innerHTML=h+"</div>";
   el.className="fade-in";
+  requestAnimationFrame(moverIndicador);
   animateDonut();
 }
 
